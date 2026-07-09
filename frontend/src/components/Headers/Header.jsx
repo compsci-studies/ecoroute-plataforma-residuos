@@ -1,0 +1,400 @@
+import { ArrowRight, LogOut, Menu, X, User, ChevronDown, Download, ShieldCheck } from "lucide-react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import useAuthStore from "../../stores/useAuthStore";
+import { getDashboardRoute, getNavLinks } from "../../utils/roleRouting";
+
+export function Header() {
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const profileRef = useRef(null);
+  const isCustomer = user?.role === "customer_admin";
+
+  const transparentHeaderRoutes = new Set(["/", "/demo", "/request-pickup", "/about-us", "/contact-us", "/help-support", "/login", "/signup", "/our-team", "/schedule", "/upload-waste", "/customer-dashboard", "/billing", "/download-app"]);
+  const isTransparentRoute = transparentHeaderRoutes.has(location.pathname);
+
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    const timer = setTimeout(() => setMobileOpen(false), 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    setProfileOpen(false);
+    navigate("/login", { replace: true });
+  };
+
+  const navLinks = isAuthenticated && user ? getNavLinks(user.role) : [];
+  const homePath = isAuthenticated && user ? getDashboardRoute(user.role) : "/";
+  const roleLabels = {
+    super_admin: "Super admin",
+    admin: "Administrador",
+    customer_admin: "Cliente",
+    driver: "Coletor",
+  };
+  const roleLabel = roleLabels[user?.role] || "Usuário";
+
+  // Determine header style based on scroll and page
+  const isTransparent = isTransparentRoute && !scrolled && !mobileOpen;
+  const headerBg = isTransparent
+    ? "bg-transparent"
+    : "bg-primary backdrop-blur-md";
+
+  // ── Logged-out header ──
+  if (!isAuthenticated) {
+    return (
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBg}`}
+      >
+        <div className="mx-auto max-w-7xl px-6 md:px-16 lg:px-24">
+          <div className="flex h-18 items-center justify-between">
+            <Link
+              to="/"
+              className="text-white font-extrabold text-2xl tracking-tight "
+              aria-label="EcoRoute home"
+            >
+              EcoRoute
+            </Link>
+
+            {/* Desktop nav — center links */}
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+              <Link
+                to="/request-pickup"
+                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                Coleta
+              </Link>
+              <Link
+                to="/about-us"
+                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                Sobre
+              </Link>
+              <Link
+                to="/our-team"
+                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                Equipe
+              </Link>
+              <Link
+                to="/help-support"
+                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                Ajuda
+              </Link>
+              <Link
+                to="/contact-us"
+                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                Contato
+              </Link>
+
+            </nav>
+
+            {/* Desktop nav — right actions */}
+            <div className="hidden md:flex items-center gap-3">
+              <Link
+                to="/signup"
+                className="text-white/70 hover:text-white text-sm font-medium transition-colors"
+              >
+                Cadastro
+              </Link>
+              <span className="h-6 w-px bg-white/20" aria-hidden="true" />
+              <Link
+                to="/demo/dono"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/18 hover:border-white/40"
+              >
+                <ShieldCheck size={16} />
+                Painel de Administração
+              </Link>
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-primary hover:bg-accent transition-colors"
+              >
+                Entrar
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden text-white p-2 rounded-lg transition cursor-pointer"
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div className="md:hidden bg-primary border-t border-white/10">
+            <div className="px-6 py-6 space-y-1">
+              <Link
+                to="/request-pickup"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
+              >
+                Coleta
+              </Link>
+              <Link
+                to="/about-us"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
+              >
+                Sobre
+              </Link>
+              <Link
+                to="/our-team"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
+              >
+                Equipe
+              </Link>
+              <Link
+                to="/contact-us"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
+              >
+                Contato
+              </Link>
+              <Link
+                to="/help-support"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
+              >
+                Ajuda
+              </Link>
+              <div className="pt-4 border-t border-white/10 mt-4 space-y-3">
+                <Link
+                  to="/demo/dono"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-full border border-white/30 bg-white/10 text-white text-base font-semibold"
+                >
+                  <ShieldCheck size={18} />
+                  Painel de Administração
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="block w-full text-center px-4 py-3 rounded-full border border-white/30 text-white text-base font-medium "
+                >
+                  Cadastro
+                </Link>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="block w-full text-center px-4 py-3 rounded-full bg-white text-primary text-base font-semibold "
+                >
+                  Entrar
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+    );
+  }
+
+  const initials = (user?.name || "U")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  // ── Logged-in header ──
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBg}`}
+    >
+      <div className="mx-auto max-w-7xl px-6 md:px-16 lg:px-24">
+        <div className="flex h-18 items-center justify-between">
+          {/* Brand */}
+          <Link
+            to={homePath}
+            className="text-white font-extrabold text-2xl tracking-tight "
+            aria-label="Página inicial da EcoRoute"
+          >
+            EcoRoute
+          </Link>
+
+          {/* Desktop nav links */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+            {navLinks.map(({ path, label }) => (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === navLinks[0]?.path}
+                className={({ isActive }) =>
+                  `px-3 lg:px-4 py-2 rounded-full text-sm font-medium  transition-colors ${isActive
+                    ? "bg-white/20 text-white"
+                    : "text-white/70 hover:text-white"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* User menu (desktop) */}
+          <div className="hidden md:flex items-center gap-3">
+            <div ref={profileRef} className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-white/10 transition cursor-pointer"
+              >
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  {initials}
+                </div>
+                <div className="text-left hidden lg:block">
+                  <p className="text-white text-sm font-semibold leading-tight">
+                    {user?.name || "Usuário"}
+                  </p>
+                  <p className="text-white/50 text-xs">{roleLabel}</p>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={`text-white/50 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-gray-100 py-2">
+                  <Link
+                    to="/profile"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    <User size={16} className="text-primary" />
+                    Meu perfil
+                  </Link>
+                  {isCustomer && (
+                    <Link
+                      to="/download-app"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition w-full text-left cursor-pointer"
+                    >
+                      <Download size={16} className="text-primary" />
+                      Baixar app
+                    </Link>
+                  )}
+                  <div className="border-t border-gray-100 my-1" />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full text-left cursor-pointer"
+                  >
+                    <LogOut size={16} />
+                    Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden text-white p-2 rounded-lg transition cursor-pointer"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile nav (logged in) */}
+      {mobileOpen && (
+        <div className="md:hidden bg-primary border-t border-white/10">
+          <div className="px-6 py-6 space-y-1">
+            {navLinks.map(({ path, label }) => (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === navLinks[0]?.path}
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) =>
+                  `block px-4 py-3 rounded-xl text-base font-medium  transition-colors ${isActive
+                    ? "bg-white/20 text-white"
+                    : "text-white/80"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+
+            <div className="pt-4 mt-4 border-t border-white/10">
+              <div className="flex items-center gap-3 px-4 mb-4">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  {initials}
+                </div>
+                <div>
+                  <p className="text-white text-sm font-semibold">
+                    {user?.name || "Usuário"}
+                  </p>
+                  <p className="text-white/50 text-xs">{roleLabel}</p>
+                </div>
+              </div>
+
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="block w-full text-center px-4 py-3 rounded-full border border-white/30 text-white text-sm font-medium  mb-3"
+              >
+                Meu perfil
+              </Link>
+              {isCustomer && (
+                <Link
+                  to="/download-app"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-4 py-3 text-sm font-medium text-white cursor-pointer mb-3"
+                >
+                  <Download size={16} />
+                  Baixar app
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-red-400/40 px-4 py-3 text-sm font-medium text-red-300 cursor-pointer"
+              >
+                <LogOut size={16} />
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

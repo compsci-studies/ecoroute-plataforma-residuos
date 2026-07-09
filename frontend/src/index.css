@@ -1,0 +1,728 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (scoped via .dark on an ancestor — admin dashboard root) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Base */
+
+:root {
+  /*
+   * App color tokens.
+   * Change these values to rebrand the whole UI without hunting through JSX.
+   */
+  --app-primary: #354f52;
+  --app-primary-hover: #2d4a4e;
+  --app-primary-dark: #315b5f;
+  --app-primary-deep: #2f3e46;
+  --app-surface: #f5f1e8;
+  --app-surface-warm: #f5f3ee;
+  --app-surface-soft: #f7f5ef;
+  --app-surface-muted: #f8fafc;
+  --app-ink: #202128;
+  --app-ink-strong: #1f2e30;
+  --app-ink-muted: #4a5568;
+  --app-border: rgb(53 79 82 / 0.14);
+  --app-overlay: rgb(0 0 0 / 0.3);
+
+  --app-success: #10b981;
+  --app-success-strong: #22c55e;
+  --app-info: #3b82f6;
+  --app-sky: #0ea5e9;
+  --app-indigo: #6366f1;
+  --app-warning: #f59e0b;
+  --app-orange: #f97316;
+  --app-danger: #ef4444;
+  --app-danger-strong: #dc2626;
+  --app-violet: #8b5cf6;
+  --app-purple: #a855f7;
+  --app-cyan: #06b6d4;
+  --app-teal: #14b8a6;
+  --app-pink: #ec4899;
+  --app-lime: #84cc16;
+  --app-green-soft: #4ade80;
+  --app-yellow: #eab308;
+  --app-muted: #9ca3af;
+  --app-chart-text: #2d3748;
+  --app-chart-muted: #4a5568;
+  --app-chart-dark-text: #dfe9e6;
+  --app-chart-dark-muted: #b6c3bf;
+  --app-chart-grid: #e2e8f0;
+  --app-white: #ffffff;
+  --app-black: #000000;
+  --app-gray-50: #f9fafb;
+  --app-gray-100: #f3f4f6;
+  --app-gray-200: #e5e7eb;
+  --app-gray-300: #d1d5db;
+  --app-gray-400: #9ca3af;
+  --app-gray-500: #6b7280;
+  --app-gray-600: #4b5563;
+  --app-gray-700: #374151;
+  --app-gray-800: #1f2937;
+  --app-gray-900: #111827;
+  --app-slate-50: #f8fafc;
+  --app-slate-100: #f1f5f9;
+  --app-slate-200: #e2e8f0;
+  --app-slate-300: #cbd5e1;
+  --app-slate-400: #94a3b8;
+  --app-slate-500: #64748b;
+  --app-slate-600: #475569;
+  --app-slate-700: #334155;
+  --app-slate-800: #1e293b;
+  --app-slate-900: #0f172a;
+
+  --app-red-base: var(--app-danger);
+  --app-orange-base: var(--app-orange);
+  --app-amber-base: var(--app-warning);
+  --app-yellow-base: var(--app-yellow);
+  --app-green-base: var(--app-success-strong);
+  --app-emerald-base: var(--app-success);
+  --app-teal-base: var(--app-teal);
+  --app-cyan-base: var(--app-cyan);
+  --app-sky-base: var(--app-sky);
+  --app-blue-base: var(--app-info);
+  --app-indigo-base: var(--app-indigo);
+  --app-violet-base: var(--app-violet);
+  --app-purple-base: var(--app-purple);
+  --app-pink-base: var(--app-pink);
+  --app-fuchsia-base: #d946ef;
+  --app-rose-base: #f43f5e;
+}
+
+@theme {
+  /*
+   * Override Tailwind's built-in neutral colors so common utilities like
+   * bg-white/90, text-white, border-gray-200, and text-slate-900 also come
+   * from the app token layer.
+   */
+  --color-white: var(--app-white);
+  --color-black: var(--app-black);
+  --color-gray-50: var(--app-gray-50);
+  --color-gray-100: var(--app-gray-100);
+  --color-gray-200: var(--app-gray-200);
+  --color-gray-300: var(--app-gray-300);
+  --color-gray-400: var(--app-gray-400);
+  --color-gray-500: var(--app-gray-500);
+  --color-gray-600: var(--app-gray-600);
+  --color-gray-700: var(--app-gray-700);
+  --color-gray-800: var(--app-gray-800);
+  --color-gray-900: var(--app-gray-900);
+  --color-slate-50: var(--app-slate-50);
+  --color-slate-100: var(--app-slate-100);
+  --color-slate-200: var(--app-slate-200);
+  --color-slate-300: var(--app-slate-300);
+  --color-slate-400: var(--app-slate-400);
+  --color-slate-500: var(--app-slate-500);
+  --color-slate-600: var(--app-slate-600);
+  --color-slate-700: var(--app-slate-700);
+  --color-slate-800: var(--app-slate-800);
+  --color-slate-900: var(--app-slate-900);
+
+  --color-red-50: color-mix(in srgb, var(--app-red-base) 10%, var(--app-white));
+  --color-red-100: color-mix(in srgb, var(--app-red-base) 18%, var(--app-white));
+  --color-red-200: color-mix(in srgb, var(--app-red-base) 30%, var(--app-white));
+  --color-red-300: color-mix(in srgb, var(--app-red-base) 48%, var(--app-white));
+  --color-red-400: color-mix(in srgb, var(--app-red-base) 78%, var(--app-white));
+  --color-red-500: var(--app-red-base);
+  --color-red-600: color-mix(in srgb, var(--app-red-base) 88%, var(--app-black));
+  --color-red-700: color-mix(in srgb, var(--app-red-base) 76%, var(--app-black));
+  --color-red-800: color-mix(in srgb, var(--app-red-base) 62%, var(--app-black));
+  --color-red-900: color-mix(in srgb, var(--app-red-base) 48%, var(--app-black));
+
+  --color-orange-50: color-mix(in srgb, var(--app-orange-base) 10%, var(--app-white));
+  --color-orange-100: color-mix(in srgb, var(--app-orange-base) 18%, var(--app-white));
+  --color-orange-200: color-mix(in srgb, var(--app-orange-base) 30%, var(--app-white));
+  --color-orange-300: color-mix(in srgb, var(--app-orange-base) 48%, var(--app-white));
+  --color-orange-400: color-mix(in srgb, var(--app-orange-base) 78%, var(--app-white));
+  --color-orange-500: var(--app-orange-base);
+  --color-orange-600: color-mix(in srgb, var(--app-orange-base) 88%, var(--app-black));
+  --color-orange-700: color-mix(in srgb, var(--app-orange-base) 76%, var(--app-black));
+  --color-orange-800: color-mix(in srgb, var(--app-orange-base) 62%, var(--app-black));
+  --color-orange-900: color-mix(in srgb, var(--app-orange-base) 48%, var(--app-black));
+
+  --color-amber-50: color-mix(in srgb, var(--app-amber-base) 10%, var(--app-white));
+  --color-amber-100: color-mix(in srgb, var(--app-amber-base) 18%, var(--app-white));
+  --color-amber-200: color-mix(in srgb, var(--app-amber-base) 30%, var(--app-white));
+  --color-amber-300: color-mix(in srgb, var(--app-amber-base) 48%, var(--app-white));
+  --color-amber-400: color-mix(in srgb, var(--app-amber-base) 78%, var(--app-white));
+  --color-amber-500: var(--app-amber-base);
+  --color-amber-600: color-mix(in srgb, var(--app-amber-base) 88%, var(--app-black));
+  --color-amber-700: color-mix(in srgb, var(--app-amber-base) 76%, var(--app-black));
+  --color-amber-800: color-mix(in srgb, var(--app-amber-base) 62%, var(--app-black));
+  --color-amber-900: color-mix(in srgb, var(--app-amber-base) 48%, var(--app-black));
+
+  --color-yellow-50: color-mix(in srgb, var(--app-yellow-base) 10%, var(--app-white));
+  --color-yellow-100: color-mix(in srgb, var(--app-yellow-base) 18%, var(--app-white));
+  --color-yellow-200: color-mix(in srgb, var(--app-yellow-base) 30%, var(--app-white));
+  --color-yellow-300: color-mix(in srgb, var(--app-yellow-base) 48%, var(--app-white));
+  --color-yellow-400: color-mix(in srgb, var(--app-yellow-base) 78%, var(--app-white));
+  --color-yellow-500: var(--app-yellow-base);
+  --color-yellow-600: color-mix(in srgb, var(--app-yellow-base) 88%, var(--app-black));
+  --color-yellow-700: color-mix(in srgb, var(--app-yellow-base) 76%, var(--app-black));
+  --color-yellow-800: color-mix(in srgb, var(--app-yellow-base) 62%, var(--app-black));
+  --color-yellow-900: color-mix(in srgb, var(--app-yellow-base) 48%, var(--app-black));
+
+  --color-green-50: color-mix(in srgb, var(--app-green-base) 10%, var(--app-white));
+  --color-green-100: color-mix(in srgb, var(--app-green-base) 18%, var(--app-white));
+  --color-green-200: color-mix(in srgb, var(--app-green-base) 30%, var(--app-white));
+  --color-green-300: color-mix(in srgb, var(--app-green-base) 48%, var(--app-white));
+  --color-green-400: color-mix(in srgb, var(--app-green-base) 78%, var(--app-white));
+  --color-green-500: var(--app-green-base);
+  --color-green-600: color-mix(in srgb, var(--app-green-base) 88%, var(--app-black));
+  --color-green-700: color-mix(in srgb, var(--app-green-base) 76%, var(--app-black));
+  --color-green-800: color-mix(in srgb, var(--app-green-base) 62%, var(--app-black));
+  --color-green-900: color-mix(in srgb, var(--app-green-base) 48%, var(--app-black));
+
+  --color-emerald-50: color-mix(in srgb, var(--app-emerald-base) 10%, var(--app-white));
+  --color-emerald-100: color-mix(in srgb, var(--app-emerald-base) 18%, var(--app-white));
+  --color-emerald-200: color-mix(in srgb, var(--app-emerald-base) 30%, var(--app-white));
+  --color-emerald-300: color-mix(in srgb, var(--app-emerald-base) 48%, var(--app-white));
+  --color-emerald-400: color-mix(in srgb, var(--app-emerald-base) 78%, var(--app-white));
+  --color-emerald-500: var(--app-emerald-base);
+  --color-emerald-600: color-mix(in srgb, var(--app-emerald-base) 88%, var(--app-black));
+  --color-emerald-700: color-mix(in srgb, var(--app-emerald-base) 76%, var(--app-black));
+  --color-emerald-800: color-mix(in srgb, var(--app-emerald-base) 62%, var(--app-black));
+  --color-emerald-900: color-mix(in srgb, var(--app-emerald-base) 48%, var(--app-black));
+
+  --color-teal-50: color-mix(in srgb, var(--app-teal-base) 10%, var(--app-white));
+  --color-teal-100: color-mix(in srgb, var(--app-teal-base) 18%, var(--app-white));
+  --color-teal-200: color-mix(in srgb, var(--app-teal-base) 30%, var(--app-white));
+  --color-teal-300: color-mix(in srgb, var(--app-teal-base) 48%, var(--app-white));
+  --color-teal-400: color-mix(in srgb, var(--app-teal-base) 78%, var(--app-white));
+  --color-teal-500: var(--app-teal-base);
+  --color-teal-600: color-mix(in srgb, var(--app-teal-base) 88%, var(--app-black));
+  --color-teal-700: color-mix(in srgb, var(--app-teal-base) 76%, var(--app-black));
+  --color-teal-800: color-mix(in srgb, var(--app-teal-base) 62%, var(--app-black));
+  --color-teal-900: color-mix(in srgb, var(--app-teal-base) 48%, var(--app-black));
+
+  --color-cyan-50: color-mix(in srgb, var(--app-cyan-base) 10%, var(--app-white));
+  --color-cyan-100: color-mix(in srgb, var(--app-cyan-base) 18%, var(--app-white));
+  --color-cyan-200: color-mix(in srgb, var(--app-cyan-base) 30%, var(--app-white));
+  --color-cyan-300: color-mix(in srgb, var(--app-cyan-base) 48%, var(--app-white));
+  --color-cyan-400: color-mix(in srgb, var(--app-cyan-base) 78%, var(--app-white));
+  --color-cyan-500: var(--app-cyan-base);
+  --color-cyan-600: color-mix(in srgb, var(--app-cyan-base) 88%, var(--app-black));
+  --color-cyan-700: color-mix(in srgb, var(--app-cyan-base) 76%, var(--app-black));
+  --color-cyan-800: color-mix(in srgb, var(--app-cyan-base) 62%, var(--app-black));
+  --color-cyan-900: color-mix(in srgb, var(--app-cyan-base) 48%, var(--app-black));
+
+  --color-sky-50: color-mix(in srgb, var(--app-sky-base) 10%, var(--app-white));
+  --color-sky-100: color-mix(in srgb, var(--app-sky-base) 18%, var(--app-white));
+  --color-sky-200: color-mix(in srgb, var(--app-sky-base) 30%, var(--app-white));
+  --color-sky-300: color-mix(in srgb, var(--app-sky-base) 48%, var(--app-white));
+  --color-sky-400: color-mix(in srgb, var(--app-sky-base) 78%, var(--app-white));
+  --color-sky-500: var(--app-sky-base);
+  --color-sky-600: color-mix(in srgb, var(--app-sky-base) 88%, var(--app-black));
+  --color-sky-700: color-mix(in srgb, var(--app-sky-base) 76%, var(--app-black));
+  --color-sky-800: color-mix(in srgb, var(--app-sky-base) 62%, var(--app-black));
+  --color-sky-900: color-mix(in srgb, var(--app-sky-base) 48%, var(--app-black));
+
+  --color-blue-50: color-mix(in srgb, var(--app-blue-base) 10%, var(--app-white));
+  --color-blue-100: color-mix(in srgb, var(--app-blue-base) 18%, var(--app-white));
+  --color-blue-200: color-mix(in srgb, var(--app-blue-base) 30%, var(--app-white));
+  --color-blue-300: color-mix(in srgb, var(--app-blue-base) 48%, var(--app-white));
+  --color-blue-400: color-mix(in srgb, var(--app-blue-base) 78%, var(--app-white));
+  --color-blue-500: var(--app-blue-base);
+  --color-blue-600: color-mix(in srgb, var(--app-blue-base) 88%, var(--app-black));
+  --color-blue-700: color-mix(in srgb, var(--app-blue-base) 76%, var(--app-black));
+  --color-blue-800: color-mix(in srgb, var(--app-blue-base) 62%, var(--app-black));
+  --color-blue-900: color-mix(in srgb, var(--app-blue-base) 48%, var(--app-black));
+
+  --color-indigo-50: color-mix(in srgb, var(--app-indigo-base) 10%, var(--app-white));
+  --color-indigo-100: color-mix(in srgb, var(--app-indigo-base) 18%, var(--app-white));
+  --color-indigo-200: color-mix(in srgb, var(--app-indigo-base) 30%, var(--app-white));
+  --color-indigo-300: color-mix(in srgb, var(--app-indigo-base) 48%, var(--app-white));
+  --color-indigo-400: color-mix(in srgb, var(--app-indigo-base) 78%, var(--app-white));
+  --color-indigo-500: var(--app-indigo-base);
+  --color-indigo-600: color-mix(in srgb, var(--app-indigo-base) 88%, var(--app-black));
+  --color-indigo-700: color-mix(in srgb, var(--app-indigo-base) 76%, var(--app-black));
+  --color-indigo-800: color-mix(in srgb, var(--app-indigo-base) 62%, var(--app-black));
+  --color-indigo-900: color-mix(in srgb, var(--app-indigo-base) 48%, var(--app-black));
+
+  --color-violet-50: color-mix(in srgb, var(--app-violet-base) 10%, var(--app-white));
+  --color-violet-100: color-mix(in srgb, var(--app-violet-base) 18%, var(--app-white));
+  --color-violet-200: color-mix(in srgb, var(--app-violet-base) 30%, var(--app-white));
+  --color-violet-300: color-mix(in srgb, var(--app-violet-base) 48%, var(--app-white));
+  --color-violet-400: color-mix(in srgb, var(--app-violet-base) 78%, var(--app-white));
+  --color-violet-500: var(--app-violet-base);
+  --color-violet-600: color-mix(in srgb, var(--app-violet-base) 88%, var(--app-black));
+  --color-violet-700: color-mix(in srgb, var(--app-violet-base) 76%, var(--app-black));
+  --color-violet-800: color-mix(in srgb, var(--app-violet-base) 62%, var(--app-black));
+  --color-violet-900: color-mix(in srgb, var(--app-violet-base) 48%, var(--app-black));
+
+  --color-purple-50: color-mix(in srgb, var(--app-purple-base) 10%, var(--app-white));
+  --color-purple-100: color-mix(in srgb, var(--app-purple-base) 18%, var(--app-white));
+  --color-purple-200: color-mix(in srgb, var(--app-purple-base) 30%, var(--app-white));
+  --color-purple-300: color-mix(in srgb, var(--app-purple-base) 48%, var(--app-white));
+  --color-purple-400: color-mix(in srgb, var(--app-purple-base) 78%, var(--app-white));
+  --color-purple-500: var(--app-purple-base);
+  --color-purple-600: color-mix(in srgb, var(--app-purple-base) 88%, var(--app-black));
+  --color-purple-700: color-mix(in srgb, var(--app-purple-base) 76%, var(--app-black));
+  --color-purple-800: color-mix(in srgb, var(--app-purple-base) 62%, var(--app-black));
+  --color-purple-900: color-mix(in srgb, var(--app-purple-base) 48%, var(--app-black));
+
+  --color-fuchsia-50: color-mix(in srgb, var(--app-fuchsia-base) 10%, var(--app-white));
+  --color-fuchsia-100: color-mix(in srgb, var(--app-fuchsia-base) 18%, var(--app-white));
+  --color-fuchsia-200: color-mix(in srgb, var(--app-fuchsia-base) 30%, var(--app-white));
+  --color-fuchsia-300: color-mix(in srgb, var(--app-fuchsia-base) 48%, var(--app-white));
+  --color-fuchsia-400: color-mix(in srgb, var(--app-fuchsia-base) 78%, var(--app-white));
+  --color-fuchsia-500: var(--app-fuchsia-base);
+  --color-fuchsia-600: color-mix(in srgb, var(--app-fuchsia-base) 88%, var(--app-black));
+  --color-fuchsia-700: color-mix(in srgb, var(--app-fuchsia-base) 76%, var(--app-black));
+  --color-fuchsia-800: color-mix(in srgb, var(--app-fuchsia-base) 62%, var(--app-black));
+  --color-fuchsia-900: color-mix(in srgb, var(--app-fuchsia-base) 48%, var(--app-black));
+
+  --color-lime-50: color-mix(in srgb, var(--app-lime) 10%, var(--app-white));
+  --color-lime-100: color-mix(in srgb, var(--app-lime) 18%, var(--app-white));
+  --color-lime-200: color-mix(in srgb, var(--app-lime) 30%, var(--app-white));
+  --color-lime-300: color-mix(in srgb, var(--app-lime) 48%, var(--app-white));
+  --color-lime-400: color-mix(in srgb, var(--app-lime) 78%, var(--app-white));
+  --color-lime-500: var(--app-lime);
+  --color-lime-600: color-mix(in srgb, var(--app-lime) 88%, var(--app-black));
+  --color-lime-700: color-mix(in srgb, var(--app-lime) 76%, var(--app-black));
+  --color-lime-800: color-mix(in srgb, var(--app-lime) 62%, var(--app-black));
+  --color-lime-900: color-mix(in srgb, var(--app-lime) 48%, var(--app-black));
+
+  --color-pink-50: color-mix(in srgb, var(--app-pink-base) 10%, var(--app-white));
+  --color-pink-100: color-mix(in srgb, var(--app-pink-base) 18%, var(--app-white));
+  --color-pink-200: color-mix(in srgb, var(--app-pink-base) 30%, var(--app-white));
+  --color-pink-300: color-mix(in srgb, var(--app-pink-base) 48%, var(--app-white));
+  --color-pink-400: color-mix(in srgb, var(--app-pink-base) 78%, var(--app-white));
+  --color-pink-500: var(--app-pink-base);
+  --color-pink-600: color-mix(in srgb, var(--app-pink-base) 88%, var(--app-black));
+  --color-pink-700: color-mix(in srgb, var(--app-pink-base) 76%, var(--app-black));
+  --color-pink-800: color-mix(in srgb, var(--app-pink-base) 62%, var(--app-black));
+  --color-pink-900: color-mix(in srgb, var(--app-pink-base) 48%, var(--app-black));
+
+  --color-rose-50: color-mix(in srgb, var(--app-rose-base) 10%, var(--app-white));
+  --color-rose-100: color-mix(in srgb, var(--app-rose-base) 18%, var(--app-white));
+  --color-rose-200: color-mix(in srgb, var(--app-rose-base) 30%, var(--app-white));
+  --color-rose-300: color-mix(in srgb, var(--app-rose-base) 48%, var(--app-white));
+  --color-rose-400: color-mix(in srgb, var(--app-rose-base) 78%, var(--app-white));
+  --color-rose-500: var(--app-rose-base);
+  --color-rose-600: color-mix(in srgb, var(--app-rose-base) 88%, var(--app-black));
+  --color-rose-700: color-mix(in srgb, var(--app-rose-base) 76%, var(--app-black));
+  --color-rose-800: color-mix(in srgb, var(--app-rose-base) 62%, var(--app-black));
+  --color-rose-900: color-mix(in srgb, var(--app-rose-base) 48%, var(--app-black));
+  --color-primary: var(--app-primary);
+  --color-accent: var(--app-surface);
+  --color-secondary: var(--app-surface);
+  --color-dark-mode: var(--app-ink);
+  --color-brand-primary: var(--app-primary);
+  --color-brand-primary-hover: var(--app-primary-hover);
+  --color-brand-primary-deep: var(--app-primary-deep);
+  --color-brand-surface: var(--app-surface);
+  --color-brand-surface-warm: var(--app-surface-warm);
+  --color-brand-surface-soft: var(--app-surface-soft);
+  --color-brand-ink-strong: var(--app-ink-strong);
+  --color-brand-success: var(--app-success);
+  --color-brand-info: var(--app-info);
+  --color-brand-sky: var(--app-sky);
+  --color-brand-warning: var(--app-warning);
+  --color-brand-orange: var(--app-orange);
+  --color-brand-danger: var(--app-danger);
+  --color-brand-violet: var(--app-violet);
+  --color-brand-purple: var(--app-purple);
+  --color-brand-teal: var(--app-teal);
+  --color-brand-pink: var(--app-pink);
+  --color-brand-lime: var(--app-lime);
+  --animate-truckMove: truckMove 2s ease-in-out infinite;
+  --animate-modalIn: modalIn 200ms ease-out;
+}
+
+/*
+ * Admin dashboard shell — matches the token palette above.
+ * Child pages inherit a lighter --color-primary on dark surfaces so text-primary / borders stay readable.
+ */
+.admin-dashboard-root {
+  color-scheme: light;
+  --color-accent: #e2e8f0;
+  --color-secondary: var(--app-surface-muted);
+  --dash-shell: #ffffff;
+  --dash-page: var(--app-surface-muted);
+  --dash-card: #ffffff;
+  --dash-card-soft: #f1f5f9;
+  --dash-border: var(--app-border);
+  --dash-muted: color-mix(in srgb, var(--app-primary) 62%, transparent);
+  --dash-overlay: var(--app-overlay);
+}
+
+.admin-dashboard-root.dark {
+  color-scheme: dark;
+  --dash-shell: #050505;
+  --dash-page: #000000;
+  --dash-card: #0d0f12;
+  --dash-card-soft: #15181d;
+  --dash-border: rgb(231 239 236 / 0.14);
+  --dash-muted: rgb(231 239 236 / 0.68);
+  --dash-overlay: rgb(0 0 0 / 0.68);
+  /* Muted sage-tinted foreground for text-primary / border-primary / bg-primary/* on dark UI */
+  --color-primary: #edf5f2;
+  --color-accent: var(--app-surface);
+}
+
+/* White cards/panels across admin routes — keeps tables and stats readable in dark mode */
+.admin-dashboard-root.dark .bg-white {
+  background-color: var(--dash-card);
+}
+
+.admin-dashboard-root.dark .bg-primary {
+  background-color: var(--app-primary-dark);
+}
+
+/* Dark-mode repair layer for older dashboard pages that hard-code light panels. */
+.admin-dashboard-root.dark [class~="bg-white/80"],
+.admin-dashboard-root.dark [class~="bg-white/60"],
+.admin-dashboard-root.dark [class~="bg-white/50"] {
+  background-color: color-mix(in srgb, var(--dash-card) 84%, transparent);
+}
+
+.admin-dashboard-root.dark .bg-gray-50,
+.admin-dashboard-root.dark .bg-gray-100,
+.admin-dashboard-root.dark [class~="bg-gray-50/50"] {
+  background-color: var(--dash-card-soft);
+}
+
+.admin-dashboard-root.dark [class*="bg-[linear-gradient"] {
+  background: linear-gradient(120deg, #222b29, #262630);
+}
+
+.admin-dashboard-root.dark .hover\:bg-gray-50:hover,
+.admin-dashboard-root.dark .hover\:bg-gray-50\/50:hover,
+.admin-dashboard-root.dark .hover\:bg-white:hover {
+  background-color: #2b303a;
+}
+
+.admin-dashboard-root.dark .border-gray-100,
+.admin-dashboard-root.dark .border-gray-200,
+.admin-dashboard-root.dark .border-gray-300 {
+  border-color: var(--dash-border);
+}
+
+.admin-dashboard-root.dark .text-gray-400,
+.admin-dashboard-root.dark .text-gray-500,
+.admin-dashboard-root.dark .text-gray-600,
+.admin-dashboard-root.dark .text-gray-700 {
+  color: var(--dash-muted);
+}
+
+.admin-dashboard-root.dark .bg-emerald-50,
+.admin-dashboard-root.dark .bg-emerald-100,
+.admin-dashboard-root.dark [class~="bg-emerald-50/40"],
+.admin-dashboard-root.dark [class~="bg-emerald-50/50"],
+.admin-dashboard-root.dark [class~="bg-emerald-50/60"] {
+  background-color: rgb(6 78 59 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-green-50,
+.admin-dashboard-root.dark .bg-green-100 {
+  background-color: rgb(20 83 45 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-blue-50,
+.admin-dashboard-root.dark .bg-blue-100 {
+  background-color: rgb(30 64 175 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-indigo-50,
+.admin-dashboard-root.dark .bg-indigo-100 {
+  background-color: rgb(67 56 202 / 0.26);
+}
+
+.admin-dashboard-root.dark .bg-purple-50,
+.admin-dashboard-root.dark .bg-purple-100 {
+  background-color: rgb(107 33 168 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-violet-50,
+.admin-dashboard-root.dark .bg-violet-100 {
+  background-color: rgb(109 40 217 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-amber-50,
+.admin-dashboard-root.dark .bg-amber-100,
+.admin-dashboard-root.dark [class~="bg-amber-50/40"],
+.admin-dashboard-root.dark [class~="bg-amber-50/50"],
+.admin-dashboard-root.dark [class~="bg-amber-50/60"] {
+  background-color: rgb(146 64 14 / 0.26);
+}
+
+.admin-dashboard-root.dark .bg-yellow-50,
+.admin-dashboard-root.dark .bg-yellow-100 {
+  background-color: rgb(133 77 14 / 0.26);
+}
+
+.admin-dashboard-root.dark .bg-orange-50,
+.admin-dashboard-root.dark .bg-orange-100 {
+  background-color: rgb(154 52 18 / 0.26);
+}
+
+.admin-dashboard-root.dark .bg-red-50,
+.admin-dashboard-root.dark .bg-red-100,
+.admin-dashboard-root.dark [class~="bg-red-50/40"],
+.admin-dashboard-root.dark [class~="bg-red-50/50"],
+.admin-dashboard-root.dark [class~="bg-red-50/60"] {
+  background-color: rgb(127 29 29 / 0.28);
+}
+
+.admin-dashboard-root.dark .bg-teal-50,
+.admin-dashboard-root.dark .bg-teal-100 {
+  background-color: rgb(17 94 89 / 0.26);
+}
+
+.admin-dashboard-root.dark .border-emerald-100,
+.admin-dashboard-root.dark .border-emerald-200,
+.admin-dashboard-root.dark .border-green-100,
+.admin-dashboard-root.dark .border-green-200 {
+  border-color: rgb(52 211 153 / 0.28);
+}
+
+.admin-dashboard-root.dark .border-blue-100,
+.admin-dashboard-root.dark .border-blue-200 {
+  border-color: rgb(96 165 250 / 0.28);
+}
+
+.admin-dashboard-root.dark .border-purple-100,
+.admin-dashboard-root.dark .border-purple-200,
+.admin-dashboard-root.dark .border-violet-100,
+.admin-dashboard-root.dark .border-violet-200 {
+  border-color: rgb(196 181 253 / 0.28);
+}
+
+.admin-dashboard-root.dark .border-amber-100,
+.admin-dashboard-root.dark .border-amber-200,
+.admin-dashboard-root.dark .border-yellow-100,
+.admin-dashboard-root.dark .border-yellow-200,
+.admin-dashboard-root.dark .border-orange-100,
+.admin-dashboard-root.dark .border-orange-200 {
+  border-color: rgb(251 191 36 / 0.28);
+}
+
+.admin-dashboard-root.dark .border-red-100,
+.admin-dashboard-root.dark .border-red-200 {
+  border-color: rgb(248 113 113 / 0.28);
+}
+
+.admin-dashboard-root.dark .text-emerald-500,
+.admin-dashboard-root.dark .text-emerald-600,
+.admin-dashboard-root.dark .text-emerald-700,
+.admin-dashboard-root.dark .text-green-600,
+.admin-dashboard-root.dark .text-green-700 {
+  color: #6ee7b7;
+}
+
+.admin-dashboard-root.dark .text-blue-500,
+.admin-dashboard-root.dark .text-blue-600,
+.admin-dashboard-root.dark .text-blue-700,
+.admin-dashboard-root.dark .text-indigo-600,
+.admin-dashboard-root.dark .text-indigo-700 {
+  color: #93c5fd;
+}
+
+.admin-dashboard-root.dark .text-purple-500,
+.admin-dashboard-root.dark .text-purple-600,
+.admin-dashboard-root.dark .text-purple-700,
+.admin-dashboard-root.dark .text-violet-600,
+.admin-dashboard-root.dark .text-violet-700 {
+  color: #c4b5fd;
+}
+
+.admin-dashboard-root.dark .text-amber-500,
+.admin-dashboard-root.dark .text-amber-600,
+.admin-dashboard-root.dark .text-amber-700,
+.admin-dashboard-root.dark .text-amber-800,
+.admin-dashboard-root.dark .text-yellow-700,
+.admin-dashboard-root.dark .text-orange-600,
+.admin-dashboard-root.dark .text-orange-700 {
+  color: #fcd34d;
+}
+
+.admin-dashboard-root.dark .text-red-500,
+.admin-dashboard-root.dark .text-red-600,
+.admin-dashboard-root.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+.admin-dashboard-root.dark .text-teal-600,
+.admin-dashboard-root.dark .text-teal-700 {
+  color: #5eead4;
+}
+
+.admin-dashboard-root.dark input,
+.admin-dashboard-root.dark select,
+.admin-dashboard-root.dark textarea {
+  background-color: #191c24;
+  color: var(--color-primary);
+  border-color: var(--dash-border);
+}
+
+.admin-dashboard-root.dark input[readonly],
+.admin-dashboard-root.dark textarea[readonly],
+.admin-dashboard-root.dark input:disabled,
+.admin-dashboard-root.dark select:disabled,
+.admin-dashboard-root.dark textarea:disabled {
+  background-color: #242832;
+  color: color-mix(in srgb, var(--color-primary) 62%, transparent);
+}
+
+.admin-dashboard-root.dark input::placeholder,
+.admin-dashboard-root.dark textarea::placeholder {
+  color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.dash-metric-card {
+  background-color: color-mix(in srgb, var(--dash-card-soft) 82%, transparent);
+  border: 1px solid var(--dash-border);
+  color: var(--color-primary);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.dash-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--dash-border));
+}
+
+.dash-metric-card[data-tone="green"] {
+  background-color: color-mix(in srgb, var(--app-success) 11%, var(--dash-card));
+  border-color: color-mix(in srgb, var(--app-success) 28%, var(--dash-border));
+}
+
+.dash-metric-card[data-tone="blue"] {
+  background-color: color-mix(in srgb, var(--app-info) 10%, var(--dash-card));
+  border-color: color-mix(in srgb, var(--app-info) 26%, var(--dash-border));
+}
+
+.dash-metric-card[data-tone="amber"] {
+  background-color: color-mix(in srgb, var(--app-warning) 11%, var(--dash-card));
+  border-color: color-mix(in srgb, var(--app-warning) 28%, var(--dash-border));
+}
+
+.dash-metric-card[data-tone="red"] {
+  background-color: color-mix(in srgb, var(--app-danger) 10%, var(--dash-card));
+  border-color: color-mix(in srgb, var(--app-danger) 26%, var(--dash-border));
+}
+
+.dash-metric-card[data-tone="violet"] {
+  background-color: color-mix(in srgb, var(--app-violet) 10%, var(--dash-card));
+  border-color: color-mix(in srgb, var(--app-violet) 26%, var(--dash-border));
+}
+
+.dash-interactive-card {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--dash-border);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.dash-interactive-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--app-success) 72%, var(--color-primary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+.dash-interactive-card:hover,
+.dash-interactive-card:focus-within {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--dash-border));
+  box-shadow: 0 18px 42px rgb(0 0 0 / 0.12);
+}
+
+.admin-dashboard-root.dark .dash-interactive-card:hover,
+.admin-dashboard-root.dark .dash-interactive-card:focus-within {
+  box-shadow: 0 18px 42px rgb(0 0 0 / 0.42);
+}
+
+.dash-interactive-card:hover::before,
+.dash-interactive-card:focus-within::before {
+  transform: scaleX(1);
+}
+
+.admin-dashboard-root button,
+.admin-dashboard-root a,
+.admin-dashboard-root input,
+.admin-dashboard-root select,
+.admin-dashboard-root textarea {
+  outline-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.admin-dashboard-root ::selection {
+  background: color-mix(in srgb, var(--color-primary) 28%, transparent);
+}
+
+.admin-dashboard-root * {
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 28%, transparent) transparent;
+}
+
+@keyframes truckMove {
+  0% { transform: translateX(-8px); }
+  50% { transform: translateX(160px); }
+  100% { transform: translateX(-8px); }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Landing page */
+.landing-page-shell {
+  position: relative;
+  overflow: clip;
+  background-color: var(--app-surface);
+}
+
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+  will-change: opacity, transform;
+}
+
+.lp-reveal.lp-in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lp-block {
+  position: relative;
+}
+
+.lp-block + .lp-block {
+  margin-top: 0;
+}
+
+.lp-soft-panel section {
+  border-radius: 0;
+}
+
+.lp-block-hero section,
+.lp-block-cta section {
+  border-radius: 0;
+}

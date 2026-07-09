@@ -1,0 +1,559 @@
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import api from "../utils/api";
+import useAuthStore from "../stores/useAuthStore";
+import { getSocket } from "../utils/socket";
+import { isAbortError } from "../utils/requests";
+import DeletionRequests from "./DeletionRequests";
+import { Bell, AlertTriangle, CheckCircle, Info, Truck, User, Ban, RotateCcw, Clock, CheckCheck, Filter, RefreshCw } from "lucide-react";
+import PaginationControls from "../components/shared/PaginationControls";
+import { AdminEmptyState, AdminErrorState, ListSkeleton } from "../components/shared/AdminListStates";
+
+const SEVERITY_CONFIG = {
+  critical: { border: "border-l-red-500", bg: "bg-red-50/60", badge: "bg-red-100 text-red-700", icon: <AlertTriangle className="w-5 h-5 text-red-500" /> },
+  warning: { border: "border-l-amber-500", bg: "bg-amber-50/60", badge: "bg-amber-100 text-amber-700", icon: <AlertTriangle className="w-5 h-5 text-amber-500" /> },
+  info: { border: "border-l-blue-500", bg: "bg-blue-50/60", badge: "bg-blue-100 text-blue-700", icon: <Info className="w-5 h-5 text-blue-500" /> },
+};
+
+const SEVERITY_LABELS = {
+  all: "Todos",
+  critical: "Crítico",
+  warning: "Atenção",
+  info: "Informativo",
+};
+
+const ROLE_LABELS = {
+  super_admin: "gestão geral",
+  org_admin: "cooperativa",
+  driver: "coletor",
+  customer: "cliente",
+};
+
+const TYPE_ICONS = {
+  driverless_truck: <Truck className="w-5 h-5 text-primary/70" />,
+  no_driver: <User className="w-5 h-5 text-primary/70" />,
+  no_truck: <Ban className="w-5 h-5 text-primary/70" />,
+  schedule_failed: <AlertTriangle className="w-5 h-5 text-red-500" />,
+  redispatch_needed: <RotateCcw className="w-5 h-5 text-primary/70" />,
+  general: <Bell className="w-5 h-5 text-primary/70" />,
+};
+
+const Notifications = () => {
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState("alerts");
+  const [messages, setMessages] = useState([]);
+  const [systemAlerts, setSystemAlerts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [filterSeverity, setFilterSeverity] = useState("all");
+  const [alertsPage, setAlertsPage] = useState(1);
+  const [messagesPage, setMessagesPage] = useState(1);
+  const [alertsPagination, setAlertsPagination] = useState(null);
+  const [messagesPagination, setMessagesPagination] = useState(null);
+  const [counts, setCounts] = useState({
+    alerts: 0,
+    clients: 0,
+    org_admin: 0,
+    driver: 0,
+    deletions: 0
+  });
+
+  const totalUnread = counts.alerts + counts.clients + counts.org_admin + counts.driver + counts.deletions;
+
+  const fetchSystemAlerts = useCallback(async (page = alertsPage, signal) => {
+    try {
+      const res = await api.get(`/notifications?page=${page}&limit=10`, { signal });
+      setSystemAlerts(res.data.data || []);
+      setAlertsPagination(res.data.pagination || null);
+      return res.data.unreadCount || 0;
+    } catch (err) {
+      if (isAbortError(err)) return 0;
+      console.error("Failed to fetch system alerts", err);
+      return 0;
+    }
+  }, [alertsPage]);
+
+  const markAlertRead = async (id) => {
+    const previousAlerts = systemAlerts;
+    const wasUnread = previousAlerts.some(a => a._id === id && !a.isRead);
+    setSystemAlerts(prev => prev.map(a =>
+      a._id === id ? { ...a, isRead: true } : a
+    ));
+    if (wasUnread) setCounts(prev => ({ ...prev, alerts: Math.max(0, prev.alerts - 1) }));
+    try {
+      await api.put(`/notifications/${id}/read`, {});
+    } catch (err) {
+      setSystemAlerts(previousAlerts);
+      if (wasUnread) setCounts(prev => ({ ...prev, alerts: prev.alerts + 1 }));
+      console.error("Failed to mark alert as read", err);
+    }
+  };
+
+  const markAllAlertsRead = async () => {
+    const previousAlerts = systemAlerts;
+    const previousAlertCount = counts.alerts;
+    setSystemAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
+    setCounts(prev => ({ ...prev, alerts: 0 }));
+    try {
+      await api.put('/notifications/read-all', {});
+    } catch (err) {
+      setSystemAlerts(previousAlerts);
+      setCounts(prev => ({ ...prev, alerts: previousAlertCount }));
+      console.error("Failed to mark all alerts as read", err);
+    }
+  };
+
+  const fetchCounts = useCallback(async (signal) => {
+    try {
+      const [alertsCount, clientsRes, orgAdminRes, driverRes, deletionsRes] = await Promise.all([
+        fetchSystemAlerts(undefined, signal),
+        api.get('/contact/unread-count', { signal }),
+        api.get('/internal-messages/org_admin/unread-count', { signal }),
+        api.get('/internal-messages/driver/unread-count', { signal }),
+        api.get(
+          user?.role === "super_admin"
+            ? '/super-admin/deletion-requests/pending-count'
+            : '/org-admin/deletion-requests/pending-count',
+          { signal }
+        ),
+      ]);
+      setCounts({
+        alerts: alertsCount,
+        clients: clientsRes.data.count || 0,
+        org_admin: orgAdminRes.data.count || 0,
+        driver: driverRes.data.count || 0,
+        deletions: deletionsRes.data.count || 0
+      });
+    } catch (err) {
+      if (isAbortError(err)) return;
+      console.error("Failed to fetch notification counts", err);
+    }
+  }, [user?.role, fetchSystemAlerts]);
+
+  const fetchMessages = useCallback(async (type, page = messagesPage, signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let endpoint = "";
+      if (type === "clients") {
+        endpoint = `/contact/messages?page=${page}&limit=10`;
+      } else if (type === "org_admin" || type === "driver") {
+        endpoint = `/internal-messages/${type}?page=${page}&limit=10`;
+      } else {
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.get(endpoint, { signal });
+      setMessages(response.data.data || []);
+      setMessagesPagination(response.data.pagination || null);
+    } catch (err) {
+      if (isAbortError(err)) return;
+      setError(err.response?.data?.message || "Não foi possível carregar as mensagens");
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, [messagesPage]);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    // Real-time system notification
+    const onSystemNotification = (notification) => {
+      setSystemAlerts(prev => [{ ...notification, isRead: false }, ...prev]);
+      setCounts(prev => ({ ...prev, alerts: prev.alerts + 1 }));
+    };
+
+    // Real-time contact message
+    const onContactMessage = () => {
+      setCounts(prev => ({ ...prev, clients: prev.clients + 1 }));
+      if (activeTab === "clients") {
+        fetchMessages("clients", messagesPage);
+      }
+    };
+
+    // General unread count update
+    const onContactCount = (count) => {
+      setCounts(prev => ({ ...prev, clients: count }));
+    };
+
+    // Real-time notification count sync
+    const onNotificationCounts = (newCounts) => {
+      setCounts(prev => ({
+        ...prev,
+        ...newCounts,
+        ...(typeof newCounts?.notifications === "number" ? { alerts: newCounts.notifications } : {}),
+      }));
+    };
+
+    const onInternalMessage = (message) => {
+      if (message?.type === "org_admin" || message?.type === "driver") {
+        setCounts(prev => ({ ...prev, [message.type]: prev[message.type] + 1 }));
+        if (activeTab === message.type) fetchMessages(message.type, messagesPage);
+      } else {
+        fetchCounts();
+      }
+    };
+
+    const onInternalCounts = (newCounts) => {
+      setCounts(prev => ({ ...prev, ...newCounts }));
+    };
+
+    const onDeletionRequest = () => {
+      setCounts(prev => ({ ...prev, deletions: prev.deletions + 1 }));
+    };
+
+    const onDeletionCounts = (newCounts) => {
+      if (typeof newCounts?.deletions === "number") {
+        setCounts(prev => ({ ...prev, deletions: newCounts.deletions }));
+      }
+    };
+
+    socket.on("notification:new", onSystemNotification);
+    socket.on("new_contact_message", onContactMessage);
+    socket.on("update_unread_count", onContactCount);
+    socket.on("notification:counts", onNotificationCounts);
+    socket.on("internal-message:new", onInternalMessage);
+    socket.on("internal-message:counts", onInternalCounts);
+    socket.on("deletion-request:new", onDeletionRequest);
+    socket.on("deletion-request:counts", onDeletionCounts);
+
+    return () => {
+      socket.off("notification:new", onSystemNotification);
+      socket.off("new_contact_message", onContactMessage);
+      socket.off("update_unread_count", onContactCount);
+      socket.off("notification:counts", onNotificationCounts);
+      socket.off("internal-message:new", onInternalMessage);
+      socket.off("internal-message:counts", onInternalCounts);
+      socket.off("deletion-request:new", onDeletionRequest);
+      socket.off("deletion-request:counts", onDeletionCounts);
+    };
+  }, [activeTab, fetchCounts, fetchMessages, messagesPage]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCounts(controller.signal);
+    if (activeTab === "alerts") {
+      fetchSystemAlerts(alertsPage, controller.signal);
+    } else if (activeTab !== "deletions") {
+      fetchMessages(activeTab, messagesPage, controller.signal);
+    }
+    return () => controller.abort();
+  }, [activeTab, fetchCounts, fetchMessages, fetchSystemAlerts, alertsPage, messagesPage]);
+
+  useEffect(() => {
+    setAlertsPage(1);
+    setMessagesPage(1);
+  }, [activeTab]);
+
+  const markAsRead = async (id, type) => {
+    const previousMessages = messages;
+    const wasUnread = previousMessages.some(msg => msg._id === id && msg.status === "unread");
+    setMessages(prev => prev.map(msg => msg._id === id ? { ...msg, status: "read" } : msg));
+    if (wasUnread) setCounts(prev => ({ ...prev, [type]: Math.max(0, prev[type] - 1) }));
+    try {
+      const endpoint = type === "clients"
+        ? `/contact/${id}/read`
+        : `/internal-messages/${id}/read`;
+
+      await api.put(endpoint, {});
+    } catch (err) {
+      setMessages(previousMessages);
+      if (wasUnread) setCounts(prev => ({ ...prev, [type]: prev[type] + 1 }));
+      console.error("Failed to mark message as read", err);
+    }
+  };
+
+  const filteredAlerts = useMemo(
+    () =>
+      filterSeverity === "all"
+        ? systemAlerts
+        : systemAlerts.filter((a) => a.severity === filterSeverity),
+    [filterSeverity, systemAlerts]
+  );
+
+  const tabs = [
+    { id: "alerts", label: "Alertas da operação", icon: <AlertTriangle className="w-4 h-4" /> },
+    { id: "clients", label: "Mensagens de clientes", icon: <User className="w-4 h-4" /> },
+    { id: "org_admin", label: "Cooperativas", icon: <Bell className="w-4 h-4" /> },
+    { id: "driver", label: "Relatos de coletores", icon: <Truck className="w-4 h-4" /> },
+    { id: "deletions", label: "Solicitações de exclusão", icon: <Ban className="w-4 h-4" /> }
+  ];
+
+  const formatTime = (date) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHrs = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "agora";
+    if (diffMins < 60) return `há ${diffMins} min`;
+    if (diffHrs < 24) return `há ${diffHrs} h`;
+    if (diffDays < 7) return `há ${diffDays} d`;
+    return d.toLocaleDateString("pt-BR");
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-primary text-left">Central de notificações</h1>
+              <p className="text-sm text-primary/50 mt-0.5 text-left">
+                {totalUnread > 0 ? `${totalUnread} ${totalUnread > 1 ? "pendências não lidas" : "pendência não lida"}` : "Operação sem pendências"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={fetchCounts}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary/70 rounded-xl border border-primary/10 hover:bg-primary/5 transition self-start sm:self-auto"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Atualizar
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative p-3 rounded-xl border text-left transition-all ${
+              activeTab === tab.id
+                ? "bg-white border-primary/20 shadow-sm ring-1 ring-primary/10"
+                : "bg-white/50 border-primary/8 hover:bg-white hover:border-primary/15"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className={`${activeTab === tab.id ? "text-primary" : "text-primary/50"}`}>
+                {tab.icon}
+              </span>
+              {counts[tab.id] > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white animate-pulse">
+                  {counts[tab.id]}
+                </span>
+              )}
+            </div>
+            <p className={`text-xs font-medium truncate ${activeTab === tab.id ? "text-primary" : "text-primary/50"}`}>
+              {tab.label}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Content Area */}
+      <div>
+        {activeTab === "alerts" ? (
+          <div className="space-y-4">
+            {/* Alerts toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary/40" />
+                <div className="flex gap-1">
+                  {["all", "critical", "warning", "info"].map(sev => (
+                    <button
+                      key={sev}
+                      onClick={() => setFilterSeverity(sev)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                        filterSeverity === sev
+                          ? "bg-primary text-white"
+                          : "bg-primary/5 text-primary/60 hover:bg-primary/10"
+                      }`}
+                    >
+                      {SEVERITY_LABELS[sev] || sev}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {systemAlerts.some(a => !a.isRead) && (
+                <button
+                  onClick={markAllAlertsRead}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 px-3 py-1.5 rounded-lg border border-primary/10 hover:bg-primary/5 transition"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  Marcar tudo como lido
+                </button>
+              )}
+            </div>
+
+            {filteredAlerts.length === 0 ? (
+              <AdminEmptyState icon={CheckCircle} title="Sem alertas" message="A operação EcoRoute está sem ocorrências nesta categoria." />
+            ) : (
+              <div className="space-y-3">
+                {filteredAlerts.map(alert => {
+                  const sev = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.info;
+                  return (
+                    <div
+                      key={alert._id}
+                      className={`bg-white rounded-xl border border-l-4 overflow-hidden transition-all ${
+                        !alert.isRead
+                          ? `${sev.border} ${sev.bg} shadow-sm`
+                          : "border-gray-200 border-l-gray-300 opacity-60"
+                      }`}
+                    >
+                      <div className="p-4 sm:p-5">
+                        <div className="flex items-start gap-3">
+                          {/* Icon */}
+                          <div className="shrink-0 mt-0.5">
+                            {TYPE_ICONS[alert.type] || TYPE_ICONS.general}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-primary text-sm">{alert.title}</h3>
+                                {!alert.isRead && (
+                                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                                )}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${sev.badge}`}>
+                                  {SEVERITY_LABELS[alert.severity] || alert.severity}
+                                </span>
+                              </div>
+                              <span className="text-xs text-primary/40 whitespace-nowrap flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(alert.createdAt)}
+                              </span>
+                            </div>
+
+                            <p className="text-sm text-primary/70 leading-relaxed mt-1.5">
+                              {alert.message}
+                            </p>
+
+                            {/* Related trucks */}
+                            {alert.relatedData?.trucks?.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {alert.relatedData.trucks.map((t, i) => (
+                                  <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 text-xs">
+                                    <Truck className="w-3 h-3 text-primary/50" />
+                                    <span className="font-semibold text-primary">{t.licensePlate}</span>
+                                    {t.capacity && <span className="text-primary/40">({t.capacity}kg)</span>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Mark as read */}
+                            {!alert.isRead && (
+                              <button
+                                onClick={() => markAlertRead(alert._id)}
+                                className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary/60 hover:text-primary transition"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Marcar como lido
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <PaginationControls
+                  pagination={alertsPagination}
+                  onPageChange={setAlertsPage}
+                  itemLabel="alertas"
+                />
+              </div>
+            )}
+          </div>
+        ) : activeTab === "deletions" ? (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-primary/10">
+            <DeletionRequests onUpdate={fetchCounts} />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {loading ? (
+              <ListSkeleton rows={5} />
+            ) : error ? (
+              <AdminErrorState message={error} onRetry={() => fetchMessages(activeTab, messagesPage)} />
+            ) : messages.length === 0 ? (
+              <AdminEmptyState icon={Bell} title="Sem mensagens" message="Nenhuma conversa encontrada nesta categoria." />
+            ) : (
+              <>
+                {messages.map(msg => (
+                  <div
+                    key={msg._id}
+                    className={`bg-white rounded-xl border overflow-hidden transition-all ${
+                      msg.status === "unread"
+                        ? "border-l-4 border-l-primary border-primary/15 shadow-sm"
+                        : "border-gray-200 opacity-70"
+                    }`}
+                  >
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start gap-3">
+                      {/* Unread indicator */}
+                      <div className="shrink-0 mt-1">
+                        {msg.status === "unread" ? (
+                          <span className="flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full h-3 w-3 bg-gray-300" />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold text-primary text-sm">
+                              {activeTab === "clients" ? msg.name : msg.title}
+                            </h3>
+                            <p className="text-xs text-primary/50 mt-0.5">
+                              {activeTab === "clients"
+                                ? `${msg.email}`
+                                : `${msg.fromUser?.name || "Sistema EcoRoute"} (${ROLE_LABELS[msg.fromUser?.role] || msg.fromUser?.role || "origem não identificada"})`
+                              }
+                              {msg.orgId?.name && <span className="text-primary/40"> · {msg.orgId.name}</span>}
+                            </p>
+                          </div>
+                          <span className="text-xs text-primary/40 whitespace-nowrap flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatTime(msg.createdAt)}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 bg-primary/3 p-3 rounded-lg border border-primary/5 text-sm text-primary/80 leading-relaxed max-h-32 overflow-y-auto">
+                          {msg.message}
+                        </div>
+
+                        {msg.status === "unread" && (
+                          <button
+                            onClick={() => markAsRead(msg._id, activeTab)}
+                            className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-primary/60 hover:text-primary transition"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Marcar como lido
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  </div>
+                ))}
+                <PaginationControls
+                  pagination={messagesPagination}
+                  onPageChange={setMessagesPage}
+                  itemLabel="mensagens"
+                />
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Notifications;

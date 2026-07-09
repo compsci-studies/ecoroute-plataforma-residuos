@@ -1,0 +1,19 @@
+{
+  "name": "EcoRoute",
+  "short_name": "EcoRoute",
+  "description": "Solicite coleta e acompanhe o descarte correto de resíduos urbanos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#354f52",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/ecoroute-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,315 @@
+import { useEffect, useMemo, useState } from "react";
+import usePricingStore from "../stores/usePricingStore";
+import useAuthStore from "../stores/useAuthStore";
+import { DollarSign, Save, RefreshCw } from "lucide-react";
+
+const PricingConfig = () => {
+  const { config, loading, error, saving, fetchPricingConfig, updatePricingConfig } = usePricingStore();
+  const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = user?.role === "super_admin";
+
+  const [form, setForm] = useState(null);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  const configForm = useMemo(() => {
+    if (!config) return null;
+    return {
+      recyclable: config.categoryBase?.recyclable ?? 500,
+      nonRecyclable: config.categoryBase?.nonRecyclable ?? 800,
+      mixed: config.categoryBase?.mixed ?? 1000,
+      easy: config.levelMultiplier?.easy ?? 1.0,
+      medium: config.levelMultiplier?.medium ?? 2.5,
+      hard: config.levelMultiplier?.hard ?? 5.0,
+      distanceRatePerKm: config.distanceRatePerKm ?? 50,
+      minimumCharge: config.minimumCharge ?? 500,
+    };
+  }, [config]);
+
+  const formValues = form || configForm;
+
+  useEffect(() => {
+    fetchPricingConfig();
+  }, [fetchPricingConfig]);
+
+  const handleChange = (field, value) => {
+    if (!isSuperAdmin) return;
+    setForm((prev) => ({ ...(prev || configForm), [field]: value }));
+    setSaveMsg("");
+  };
+
+  const handleSave = async () => {
+    if (!isSuperAdmin || !formValues) return;
+    const result = await updatePricingConfig({
+      categoryBase: {
+        recyclable: Number(formValues.recyclable),
+        nonRecyclable: Number(formValues.nonRecyclable),
+        mixed: Number(formValues.mixed),
+      },
+      levelMultiplier: {
+        easy: Number(formValues.easy),
+        medium: Number(formValues.medium),
+        hard: Number(formValues.hard),
+      },
+      distanceRatePerKm: Number(formValues.distanceRatePerKm),
+      minimumCharge: Number(formValues.minimumCharge),
+    });
+    if (result.success) {
+      setSaveMsg("Precificação atualizada com sucesso.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-primary/70 font-['Poppins',sans-serif]">Carregando configuração de preços...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-red-600">{error}</p>
+        <button onClick={fetchPricingConfig} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl">
+          <RefreshCw className="w-4 h-4" /> Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  if (!formValues) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary font-['Outfit',sans-serif] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-primary" />
+            </div>
+            Configuração de precificação
+          </h1>
+          <p className="mt-1 text-sm text-primary/60 font-['Poppins',sans-serif]">
+            {isSuperAdmin ? "Gerencie taxas de coleta por categoria, dificuldade e distância" : "Consulte as taxas atuais de coleta"}
+          </p>
+        </div>
+        {config?.updatedAt && (
+          <p className="text-xs text-primary/40 font-['Poppins',sans-serif]">
+            Atualizado em: {new Date(config.updatedAt).toLocaleString("pt-BR")}
+            {config.updatedBy?.name && ` por ${config.updatedBy.name}`}
+          </p>
+        )}
+      </div>
+
+      {/* Category Base Rates */}
+      <section className="rounded-2xl border border-primary/15 bg-white p-5 sm:p-6 shadow-sm">
+        <h2 className="font-['Outfit',sans-serif] text-lg font-semibold text-primary mb-4">
+          Taxas base por categoria
+        </h2>
+        <p className="text-xs text-primary/50 mb-4 font-['Poppins',sans-serif]">
+          Preço base em R$ para cada categoria antes dos multiplicadores.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <PriceField
+            label="Reciclável"
+            tag="BIO"
+            value={formValues.recyclable}
+            onChange={(v) => handleChange("recyclable", v)}
+            readOnly={!isSuperAdmin}
+            color="green"
+          />
+          <PriceField
+            label="Não reciclável"
+            tag="NON"
+            value={formValues.nonRecyclable}
+            onChange={(v) => handleChange("nonRecyclable", v)}
+            readOnly={!isSuperAdmin}
+            color="red"
+          />
+          <PriceField
+            label="Misto"
+            tag="MIX"
+            value={formValues.mixed}
+            onChange={(v) => handleChange("mixed", v)}
+            readOnly={!isSuperAdmin}
+            color="amber"
+          />
+        </div>
+      </section>
+
+      {/* Level Multipliers */}
+      <section className="rounded-2xl border border-primary/15 bg-white p-5 sm:p-6 shadow-sm">
+        <h2 className="font-['Outfit',sans-serif] text-lg font-semibold text-primary mb-4">
+          Multiplicadores por dificuldade
+        </h2>
+        <p className="text-xs text-primary/50 mb-4 font-['Poppins',sans-serif]">
+          Multiplicador aplicado conforme dificuldade, peso e volume da retirada.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <MultiplierField
+            label="Leve"
+            desc="< 1,000 kg"
+            value={formValues.easy}
+            onChange={(v) => handleChange("easy", v)}
+            readOnly={!isSuperAdmin}
+          />
+          <MultiplierField
+            label="Média"
+            desc="1,000 – 5,000 kg"
+            value={formValues.medium}
+            onChange={(v) => handleChange("medium", v)}
+            readOnly={!isSuperAdmin}
+          />
+          <MultiplierField
+            label="Alta"
+            desc="> 5,000 kg"
+            value={formValues.hard}
+            onChange={(v) => handleChange("hard", v)}
+            readOnly={!isSuperAdmin}
+          />
+        </div>
+      </section>
+
+      {/* Distance & Minimum */}
+      <section className="rounded-2xl border border-primary/15 bg-white p-5 sm:p-6 shadow-sm">
+        <h2 className="font-['Outfit',sans-serif] text-lg font-semibold text-primary mb-4">
+          Distância e taxa mínima
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+            <label className="block text-xs uppercase tracking-wider text-primary/50 font-semibold mb-2">
+              Taxa por quilômetro (R$)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formValues.distanceRatePerKm}
+              onChange={(e) => handleChange("distanceRatePerKm", e.target.value)}
+              readOnly={!isSuperAdmin}
+              className={`w-full px-4 py-3 rounded-xl border border-primary/20 text-primary text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                !isSuperAdmin ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+              }`}
+            />
+          </div>
+          <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+            <label className="block text-xs uppercase tracking-wider text-primary/50 font-semibold mb-2">
+              Taxa mínima (R$)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formValues.minimumCharge}
+              onChange={(e) => handleChange("minimumCharge", e.target.value)}
+              readOnly={!isSuperAdmin}
+              className={`w-full px-4 py-3 rounded-xl border border-primary/20 text-primary text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                !isSuperAdmin ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+              }`}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Formula Preview */}
+      <section className="rounded-2xl border border-primary/10 bg-linear-to-br from-brand-surface-soft to-accent p-5 sm:p-6 shadow-sm">
+        <h3 className="font-['Outfit',sans-serif] text-base font-semibold text-primary mb-3">
+          Fórmula de precificação
+        </h3>
+        <div className="bg-white/80 rounded-xl border border-primary/10 p-4 font-mono text-sm text-primary/80">
+          <p>total = max(taxaMinima, taxaBase x multiplicador + distância x taxaKm)</p>
+          <p className="mt-2 text-xs text-primary/50">
+            Exemplo: não reciclável + dificuldade média + 10 km = max({formValues.minimumCharge}, {formValues.nonRecyclable} x {formValues.medium} + 10 x {formValues.distanceRatePerKm}) = <strong>R$ {Math.max(Number(formValues.minimumCharge), Number(formValues.nonRecyclable) * Number(formValues.medium) + 10 * Number(formValues.distanceRatePerKm))}</strong>
+          </p>
+        </div>
+      </section>
+
+      {/* Save Button */}
+      {isSuperAdmin && (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all shadow-sm ${
+              saving ? "bg-gray-400 cursor-not-allowed" : "bg-primary hover:opacity-95 active:scale-95"
+            }`}
+          >
+            <Save className="w-4 h-4" />
+            {saving ? "Salvando..." : "Salvar alterações"}
+          </button>
+          {saveMsg && (
+            <span className="text-sm font-medium text-green-600">{saveMsg}</span>
+          )}
+          {error && (
+            <span className="text-sm font-medium text-red-600">{error}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function PriceField({ label, tag, value, onChange, readOnly, color }) {
+  const colorMap = {
+    green: "bg-green-50 text-green-700 border-green-200",
+    red: "bg-red-50 text-red-700 border-red-200",
+    amber: "bg-amber-50 text-amber-700 border-amber-200",
+  };
+  const tagStyle = colorMap[color] || colorMap.green;
+
+  return (
+    <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${tagStyle}`}>
+          {tag}
+        </span>
+        <span className="text-sm font-semibold text-primary">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-primary/50">R$</span>
+        <input
+          type="number"
+          min="0"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          className={`flex-1 px-3 py-2 rounded-lg border border-primary/15 text-primary font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+            readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+          }`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function MultiplierField({ label, desc, value, onChange, readOnly }) {
+  return (
+    <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+      <div className="mb-2">
+        <span className="text-sm font-semibold text-primary">{label}</span>
+        <span className="ml-2 text-xs text-primary/40">{desc}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-primary/50">×</span>
+        <input
+          type="number"
+          min="0"
+          step="0.1"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          className={`flex-1 px-3 py-2 rounded-lg border border-primary/15 text-primary font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+            readOnly ? "bg-gray-50 cursor-not-allowed" : "bg-white"
+          }`}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default PricingConfig;

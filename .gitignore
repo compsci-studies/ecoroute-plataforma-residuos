@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+qa-screenshots/
+tmp/
+frontend/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.env
+CUSTOMER_PICKUP_FIX_LIST.txt
+PRODUCTION_GRADE_PROJECT_REVIEW.txt
+OPTIMIZATION_RECOMMENDATIONS.txt
+ALGORITHMS_USED_IN_APP.md
+
+# Local database seed scripts
+scripts/
+scripts/seed.js
+scripts/seedAreas.js
