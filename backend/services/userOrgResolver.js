@@ -5,63 +5,75 @@ import Organization from "../models/Organization.model.js";
 import User from "../models/User.model.js";
 
 const LOCATION_ALIASES = {
-  kathmandu: [
-    "kathmandu",
-    "ktm",
-    "kathmandu metropolitan city",
-    "kathmandu metro",
+  sao_paulo: [
+    "sao paulo",
+    "sp",
+    "capital paulista",
+    "cidade de sao paulo",
   ],
-  lalitpur: [
-    "lalitpur",
-    "patan",
-    "lalitpur metropolitan city",
+  abc_paulista: [
+    "abc paulista",
+    "santo andre",
+    "sao bernardo",
+    "sao caetano",
+    "diadema",
   ],
-  bhaktapur: [
-    "bhaktapur",
-    "bkt",
-    "bhaktapur municipality",
+  oeste_metropolitana: [
+    "osasco",
+    "barueri",
+    "carapicuiba",
+  ],
+  guarulhos: [
+    "guarulhos",
   ],
 };
 
 const LOCALITY_REGION_HINTS = {
-  kathmandu: [
-    "kamalpokhari",
-    "dhobidhara",
-    "thamel",
-    "maitidevi",
-    "baneshwor",
-    "kirtipur",
-    "balaju",
-    "newroad",
-    "new road",
-    "kalanki",
-    "boudha",
-    "bouddha",
-    "gaushala",
-    "sinamangal",
-    "lazimpat",
-    "naxal",
-    "putalisadak",
+  sao_paulo: [
+    "centro",
+    "se",
+    "bela vista",
+    "paulista",
+    "pinheiros",
+    "vila mariana",
+    "mooca",
+    "tatuape",
+    "santana",
+    "lapa",
+    "butanta",
+    "brás",
+    "bras",
+    "liberdade",
+    "santo amaro",
+    "itaquera",
+    "sao mateus",
+    "parelheiros",
   ],
-  lalitpur: [
-    "jawalakhel",
-    "pulchowk",
-    "kupandol",
-    "sanepa",
-    "satdobato",
-    "lagankhel",
+  abc_paulista: [
+    "santo andre",
+    "sao bernardo",
+    "sao caetano",
+    "diadema",
   ],
-  bhaktapur: [
-    "suryabinayak",
-    "madhyapur",
-    "thimi",
-    "nagarkot",
+  oeste_metropolitana: [
+    "osasco",
+    "barueri",
+    "carapicuiba",
+    "alphaville",
+  ],
+  guarulhos: [
+    "guarulhos",
+    "bonsucesso",
+    "pimentas",
+    "cumbica",
   ],
 };
 
 function normalizeText(value = "") {
   return String(value)
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();

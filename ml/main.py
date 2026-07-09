@@ -1,6 +1,6 @@
 """
-GreenShift ML Service — FastAPI REST API
-Waste volume prediction + smart truck scheduling for Kathmandu Valley.
+EcoRoute ML Service — FastAPI REST API
+Waste volume prediction and smart truck scheduling for Grande São Paulo.
 
 Endpoints:
   POST /predict     — Predict waste for one district on a date
@@ -29,8 +29,8 @@ from scheduler import generate_schedule
 
 # ── FastAPI app ──────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="GreenShift ML Service",
-    description="Smart waste collection scheduling for Kathmandu Valley",
+    title="EcoRoute ML Service",
+    description="Smart waste collection scheduling for Grande São Paulo",
     version="1.0.0",
 )
 
@@ -96,7 +96,7 @@ async def health_check():
     info = get_model_info()
     return {
         "status": "ok",
-        "service": "GreenShift ML Service",
+        "service": "EcoRoute ML Service",
         "model": info["model"],
         "r2_score": info["r2_score"],
         "metrics": info["metrics"],

@@ -26,7 +26,6 @@ const STATUS_CONFIG = {
 
 const PAYMENT_METHOD_LABELS = {
   cash: "dinheiro",
-  esewa: "Pix",
   pix: "Pix",
   card: "cartão",
 };
@@ -341,12 +340,12 @@ function CurrentBill({ bill, totalDue, openCount, overdueCount, payingId, payMet
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => onPay(bill._id, "esewa")}
+            onClick={() => onPay(bill._id, "pix")}
             disabled={isPaying}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
           >
             <CreditCard className="h-4 w-4" />
-            {isPaying && payMethod === "esewa" ? "Processando..." : "Pagar com Pix"}
+            {isPaying && payMethod === "pix" ? "Processando..." : "Pagar com Pix"}
           </button>
           <button
             type="button"
@@ -401,12 +400,12 @@ function BillRow({ bill, payingId, payMethod, onPay, showActions = false }) {
         <div className="mt-4 grid grid-cols-1 gap-2 border-t border-primary/10 pt-4 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => onPay(bill._id, "esewa")}
+            onClick={() => onPay(bill._id, "pix")}
             disabled={isPaying}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
           >
             <CreditCard className="h-4 w-4" />
-            {isPaying && payMethod === "esewa" ? "Processando..." : "Pagar com Pix"}
+            {isPaying && payMethod === "pix" ? "Processando..." : "Pagar com Pix"}
           </button>
           <button
             type="button"

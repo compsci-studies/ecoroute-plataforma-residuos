@@ -12,8 +12,8 @@ import {
   generateMonthlyBills,
   getBillingConfig,
   updateBillingConfig,
-  esewaBillingSuccess,
-  esewaBillingFailure,
+  pixBillingSuccess,
+  pixBillingFailure,
 } from "../controllers/billing.controller.js";
 
 const router = express.Router();
@@ -40,12 +40,12 @@ router.get(
   getPaymentHistory
 );
 
-// ── eSewa billing callbacks — UNAUTHENTICATED (same as pickup payments) ──────
+// ── PagSeguro Pix billing callbacks — UNAUTHENTICATED (same as pickup payments) ──────
 // Security is enforced by HMAC signature verification + status API.
-router.get("/esewa/success", esewaBillingSuccess);
-router.get("/esewa/failure", esewaBillingFailure);
-router.post("/esewa/success", esewaBillingSuccess);
-router.post("/esewa/failure", esewaBillingFailure);
+router.get("/pix/success", pixBillingSuccess);
+router.get("/pix/failure", pixBillingFailure);
+router.post("/pix/success", pixBillingSuccess);
+router.post("/pix/failure", pixBillingFailure);
 
 // ── Admin + Super Admin routes ───────────────────────────────────────────────
 // Both admin and super_admin can view billing overview (scoped by org)

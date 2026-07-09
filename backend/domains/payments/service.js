@@ -1,2 +1,2 @@
-export * from "../../services/esewaService.js";
+export * from "../../services/pixService.js";
 export * from "../../services/paymentIndexes.js";

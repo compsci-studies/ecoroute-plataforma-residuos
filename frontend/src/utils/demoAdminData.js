@@ -212,7 +212,7 @@ export const DEMO_ADMIN_BILLING_OVERVIEW = Object.freeze({
       billedRole: "customer_admin",
       amount: 690,
       status: "paid",
-      paymentMethod: "esewa",
+      paymentMethod: "pix",
       paidAt: dateKey(-2),
       dueDate: dateKey(5),
     },

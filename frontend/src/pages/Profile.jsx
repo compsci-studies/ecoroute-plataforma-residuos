@@ -40,11 +40,10 @@ const CATEGORY_LABELS = {
 };
 
 const PAYMENT_METHOD_LABELS = {
-  esewa: "Pix",
+  pix: "Pix",
   wallet: "Carteira",
   cash: "Dinheiro",
   card: "Cartão",
-  pix: "Pix",
 };
 
 const formatCurrency = (amount = 0) =>
@@ -329,7 +328,7 @@ export default function Profile() {
                           )}
                           {bill.paymentMethod && (
                             <span className="flex items-center gap-1">
-                              {bill.paymentMethod === "esewa" || bill.paymentMethod === "pix" ? <CreditCard size={11} /> : <Wallet size={11} />}
+                              {bill.paymentMethod === "pix" ? <CreditCard size={11} /> : <Wallet size={11} />}
                               {PAYMENT_METHOD_LABELS[bill.paymentMethod] || bill.paymentMethod}
                             </span>
                           )}

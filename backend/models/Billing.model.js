@@ -4,7 +4,7 @@ import mongoose from "mongoose";
  * Billing — monthly subscription bills for customers and admins.
  *
  * Each record represents one billing cycle (month) for one user.
- * Bills are auto-generated monthly and can be paid via cash or eSewa.
+ * Bills are auto-generated monthly and can be paid via cash or PagSeguro Pix.
  */
 const billingSchema = new mongoose.Schema(
   {
@@ -49,7 +49,7 @@ const billingSchema = new mongoose.Schema(
     paidAt: { type: Date, default: null },
     paymentMethod: {
       type: String,
-      enum: ["cash", "esewa", null],
+      enum: ["cash", "pix", null],
       default: null,
     },
     transactionRef: { type: String, default: null },

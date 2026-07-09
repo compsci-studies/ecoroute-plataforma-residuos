@@ -16,13 +16,13 @@ test("knapsackOptimization minimizes excess capacity for a single waste estimate
 
 test("optimizeTruckAssignments prefers same-organization trucks when coverage is equal", () => {
   const { assignmentByArea } = optimizeTruckAssignments([
-    { area: "Baneshwor", predictedWasteKg: 4000, wasteCategory: "high", orgId: "org-a" },
+    { area: "Pinheiros", predictedWasteKg: 4000, wasteCategory: "high", orgId: "org-a" },
   ], [
     { id: "same-org", capacity_kg: 4000, org_id: "org-a", driver_id: "driver-a" },
     { id: "other-org", capacity_kg: 4000, org_id: "org-b", driver_id: "driver-b" },
   ]);
 
-  const assignment = assignmentByArea.get("Baneshwor");
+  const assignment = assignmentByArea.get("Pinheiros");
   assert.equal(assignment.uncovered, 0);
   assert.deepEqual(assignment.trucks.map((truck) => truck.id), ["same-org"]);
 });

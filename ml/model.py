@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, date
-from nepal_holidays import (
+from brazil_holidays import (
     get_holiday_info,
     get_holiday_impact_multiplier,
     days_to_nearest_holiday,
@@ -67,41 +67,37 @@ def get_metrics():
 
 # ── Season helper ────────────────────────────────────────────────────────────
 def get_season(month):
-    if month in [6, 7, 8, 9]:
-        return "monsoon"
-    elif month in [10, 11, 12]:
-        return "autumn"
-    elif month in [1, 2]:
-        return "winter"
-    else:
-        return "spring"
+    if month in [12, 1, 2]:
+        return "verao_chuvoso"
+    if month in [3, 4, 5]:
+        return "outono"
+    if month in [6, 7, 8]:
+        return "inverno_seco"
+    return "primavera"
 
 
 # ── District types ───────────────────────────────────────────────────────────
 DISTRICT_TYPES = {
-    # Kathmandu (8 areas)
-    "Kathmandu-Core": "commercial",
-    "Baneshwor": "commercial",
-    "Koteshwor": "commercial",
-    "Balaju": "residential",
-    "Maharajgunj": "residential",
-    "Budhanilkantha": "suburban",
-    "Tokha": "suburban",
-    "Chandragiri": "rural",
-    # Lalitpur (7 areas)
-    "Lalitpur": "commercial",
-    "Satdobato": "commercial",
-    "Kirtipur": "residential",
-    "Imadol": "residential",
-    "Lubhu": "suburban",
-    "Godawari": "rural",
-    "Dakshinkali": "rural",
-    # Bhaktapur (5 areas)
-    "Bhaktapur": "commercial",
-    "Madhyapur Thimi": "residential",
-    "Suryabinayak": "suburban",
-    "Changunarayan": "rural",
-    "Nagarkot": "rural",
+    "Centro": "commercial",
+    "Bela Vista": "commercial",
+    "Pinheiros": "commercial",
+    "Brás": "commercial",
+    "Liberdade": "commercial",
+    "Vila Mariana": "residential",
+    "Mooca": "residential",
+    "Tatuapé": "residential",
+    "Santana": "residential",
+    "Lapa": "residential",
+    "Butantã": "suburban",
+    "Vila Madalena": "commercial",
+    "Santo Amaro": "commercial",
+    "Itaquera": "residential",
+    "São Mateus": "suburban",
+    "Parelheiros": "rural",
+    "Osasco Centro": "commercial",
+    "Guarulhos Centro": "commercial",
+    "Santo André": "residential",
+    "São Bernardo": "industrial",
 }
 
 DISTRICTS = list(DISTRICT_TYPES.keys())
@@ -111,7 +107,7 @@ DISTRICTS = list(DISTRICT_TYPES.keys())
 def categorize_waste(kg):
     """
     Categorize predicted waste volume.
-    Thresholds tuned for Nepal context / Kathmandu Valley scale.
+    Thresholds tuned for Brasil context / Grande São Paulo scale.
     """
     if kg < 500:
         return "none"
@@ -193,7 +189,7 @@ def predict_waste(district, target_date):
     Predict waste volume for a district on a given date.
 
     Args:
-        district: str — one of the trained Kathmandu Valley districts
+        district: str — one of the trained Grande São Paulo districts
         target_date: date object
 
     Returns:
@@ -275,7 +271,7 @@ def predict_waste_by_type(district_name, district_type, target_date, scale_facto
     Returns:
         dict with prediction details
     """
-    valid_types = ["commercial", "residential", "suburban", "rural"]
+    valid_types = ["commercial", "residential", "suburban", "rural", "industrial"]
     if district_type not in valid_types:
         raise ValueError(f"Unknown district_type '{district_type}'. Valid: {valid_types}")
 

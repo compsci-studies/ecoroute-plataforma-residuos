@@ -16,7 +16,7 @@ export default function PaymentBadge({ pickup, compact = false }) {
         currency: "BRL",
       });
 
-  const isDigitalPayment = method === "esewa" || method === "pix";
+  const isDigitalPayment = method === "pix" || method === "pix";
   const isPaid = status === "PAID";
   const isFailed = status === "FAILED";
   const isPending = status === "PENDING";

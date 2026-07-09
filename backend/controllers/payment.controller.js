@@ -6,21 +6,21 @@ import { computePickupPricingAndRoute, emitPickupToDrivers } from "../services/p
 import { invalidateDashboardCache } from "../services/dashboardCache.js";
 import { refreshPickupDailySummaryForDate } from "../services/pickupAnalytics.js";
 import {
-  buildEsewaInitiationPayload,
+  buildPagSeguroPixInitiationPayload,
   decodeAndVerifyCallback,
   verifyTransactionStatus,
-} from "../services/esewaService.js";
+} from "../services/pixService.js";
 
 /**
- * Payment controller — handles payment-method selection, eSewa initiation,
- * eSewa callback verification, cash collection, and read endpoints.
+ * Payment controller — handles payment-method selection, PagSeguro Pix initiation,
+ * PagSeguro Pix callback verification, cash collection, and read endpoints.
  *
  * Security rules enforced here
  * ────────────────────────────
  *  - The customer can only initiate payment for a pickup THEY own.
  *  - The amount is recomputed from the pickup's server-side location, org/depot,
  *    category, and level before charging; never from the request body.
- *  - eSewa callbacks are verified twice: signature check + status API.
+ *  - PagSeguro Pix callbacks are verified twice: signature check + status API.
  *  - Idempotency: a Payment moves from PENDING → COMPLETED via an atomic
  *    findOneAndUpdate guarded by `status: "PENDING"`. Duplicate callbacks
  *    are no-ops.
@@ -52,7 +52,7 @@ function paymentPayload(p) {
     currency: p.currency,
     method: p.method,
     status: p.status,
-    esewaRefId: p.esewaRefId,
+    pixRefId: p.pixRefId,
     initiatedAt: p.initiatedAt,
     paidAt: p.paidAt,
     failedAt: p.failedAt,
@@ -72,12 +72,12 @@ function invalidatePaymentAnalytics(date = new Date()) {
 /**
  * Customer chooses how they want to pay for an existing pickup.
  *
- * Body: { pickupId, method: "cash" | "esewa" }
+ * Body: { pickupId, method: "cash" | "pix" }
  *
  * Behaviour
  *  - cash:  records intent, marks pickup paymentMethod=cash, paymentStatus=PENDING
- *  - esewa: creates a Payment row, returns the SIGNED form fields the
- *           browser must POST to eSewa to start the hosted checkout.
+ *  - pix: creates a Payment row, returns the SIGNED form fields the
+ *           browser must POST to PagSeguro Pix to start the hosted checkout.
  */
 const DISPATCHABLE_PAYMENT_STATUSES = ["PAYMENT_REQUIRED", "PENDING"];
 
@@ -108,11 +108,11 @@ async function updateActivePickupPaymentStatus(payment, paymentStatus) {
   return !!pickup;
 }
 
-async function cancelSupersededEsewaAttempts(pickupId, activePaymentId) {
+async function cancelSupersededPixAttempts(pickupId, activePaymentId) {
   await Payment.updateMany(
     {
       pickupId,
-      method: "esewa",
+      method: "pix",
       status: "PENDING",
       _id: { $ne: activePaymentId },
     },
@@ -120,7 +120,7 @@ async function cancelSupersededEsewaAttempts(pickupId, activePaymentId) {
       $set: {
         status: "CANCELLED",
         failedAt: new Date(),
-        failureReason: "Superseded by a newer eSewa payment attempt",
+        failureReason: "Superseded by a newer PagSeguro Pix payment attempt",
       },
     }
   );
@@ -159,8 +159,8 @@ export const initiatePayment = async (req, res) => {
     if (!pickupId || !mongoose.isValidObjectId(pickupId)) {
       return res.status(400).json({ message: "Valid pickupId is required" });
     }
-    if (!["cash", "esewa"].includes(method)) {
-      return res.status(400).json({ message: "method must be 'cash' or 'esewa'" });
+    if (!["cash", "pix"].includes(method)) {
+      return res.status(400).json({ message: "method must be 'cash' or 'pix'" });
     }
 
     // 1. Authorisation: only the owning customer may initiate payment
@@ -243,10 +243,10 @@ export const initiatePayment = async (req, res) => {
       });
     }
 
-    // ── eSewa flow ───────────────────────────────────────────────────────
+    // ── PagSeguro Pix flow ───────────────────────────────────────────────────────
     // Build the signed form payload (signature is computed server-side using
     // the env secret — the client never sees the secret).
-    const { transactionUuid, actionUrl, formFields } = buildEsewaInitiationPayload({
+    const { transactionUuid, actionUrl, formFields } = buildPagSeguroPixInitiationPayload({
       amount,
       pickupId: pickup._id.toString(),
     });
@@ -256,21 +256,21 @@ export const initiatePayment = async (req, res) => {
       customerId: customer._id,
       amount,
       currency: pickup.currency || "BRL",
-      method: "esewa",
+      method: "pix",
       status: "PENDING",
       transactionUuid,
     });
 
-    pickup.paymentMethod = "esewa";
+    pickup.paymentMethod = "pix";
     pickup.paymentStatus = "PENDING";
     pickup.paymentId = payment._id;
     await pickup.save();
     invalidatePaymentAnalytics(pickup.createdAt);
-    await cancelSupersededEsewaAttempts(pickup._id, payment._id);
+    await cancelSupersededPixAttempts(pickup._id, payment._id);
 
     return res.status(200).json({
       success: true,
-      method: "esewa",
+      method: "pix",
       actionUrl,
       formFields,
       payment: paymentPayload(payment),
@@ -284,22 +284,22 @@ export const initiatePayment = async (req, res) => {
   }
 };
 
-// ── GET /api/payments/esewa/success ───────────────────────────────────────
+// ── GET /api/payments/pix/success ───────────────────────────────────────
 /**
- * eSewa redirects the customer's browser here after a successful payment.
+ * PagSeguro Pix redirects the customer's browser here after a successful payment.
  *
  * Steps
  *  1. Decode + verify the HMAC signature on the base64 payload
- *  2. Independently call eSewa's status API server-to-server
+ *  2. Independently call PagSeguro Pix's status API server-to-server
  *  3. Atomically transition the Payment from PENDING → COMPLETED
  *  4. Update the PickupRequest paymentStatus
  *  5. Redirect the browser back to the frontend
  *
- * This endpoint is intentionally unauthenticated (eSewa cannot send our JWT),
+ * This endpoint is intentionally unauthenticated (PagSeguro Pix cannot send our JWT),
  * but it is safe because every state change is gated on a valid signature
  * AND a successful status API verification.
  */
-export const esewaSuccess = async (req, res) => {
+export const pixSuccess = async (req, res) => {
   try {
     const data = req.query.data || req.body?.data;
 
@@ -308,7 +308,7 @@ export const esewaSuccess = async (req, res) => {
     try {
       decoded = decodeAndVerifyCallback(data);
     } catch (err) {
-      console.warn("[esewa] callback verification failed:", err.message);
+      console.warn("[pix] callback verification failed:", err.message);
       return res.redirect(`${FRONTEND_URL}/payment-failed?reason=invalid_signature`);
     }
 
@@ -352,7 +352,7 @@ export const esewaSuccess = async (req, res) => {
 
     if (!Number.isFinite(expectedAmount) || payment.amount !== expectedAmount) {
       console.warn(
-        `[esewa] stored amount mismatch for ${transactionUuid}: expected ${expectedAmount}, got ${payment.amount}`
+        `[pix] stored amount mismatch for ${transactionUuid}: expected ${expectedAmount}, got ${payment.amount}`
       );
       await Payment.updateOne(
         { _id: payment._id, status: "PENDING" },
@@ -370,12 +370,12 @@ export const esewaSuccess = async (req, res) => {
     const callbackAmount = Number(String(totalAmountStr).replace(/,/g, ""));
     if (!Number.isFinite(callbackAmount) || callbackAmount !== payment.amount) {
       console.warn(
-        `[esewa] amount mismatch for ${transactionUuid}: expected ${payment.amount}, got ${callbackAmount}`
+        `[pix] amount mismatch for ${transactionUuid}: expected ${payment.amount}, got ${callbackAmount}`
       );
       return res.redirect(`${FRONTEND_URL}/payment-failed?reason=amount_mismatch`);
     }
 
-    // 4. Independent server-to-server verification with eSewa
+    // 4. Independent server-to-server verification with PagSeguro Pix
     let statusResp;
     try {
       statusResp = await verifyTransactionStatus({
@@ -383,7 +383,7 @@ export const esewaSuccess = async (req, res) => {
         totalAmount: payment.amount,
       });
     } catch (err) {
-      console.error("[esewa] status API error:", err.message);
+      console.error("[pix] status API error:", err.message);
       return res.redirect(`${FRONTEND_URL}/payment-failed?reason=verification_failed`);
     }
 
@@ -393,9 +393,9 @@ export const esewaSuccess = async (req, res) => {
         { _id: payment._id, status: "PENDING" },
         {
           status: "FAILED",
-          esewaStatus: statusResp?.status || "UNKNOWN",
+          pixStatus: statusResp?.status || "UNKNOWN",
           failedAt: new Date(),
-          failureReason: `eSewa status: ${statusResp?.status}`,
+          failureReason: `PagSeguro Pix status: ${statusResp?.status}`,
         }
       );
       await updateActivePickupPaymentStatus(payment, "FAILED");
@@ -407,8 +407,8 @@ export const esewaSuccess = async (req, res) => {
       { _id: payment._id, status: "PENDING" },
       {
         status: "COMPLETED",
-        esewaStatus: "COMPLETE",
-        esewaRefId: statusResp.ref_id || null,
+        pixStatus: "COMPLETE",
+        pixRefId: statusResp.ref_id || null,
         paidAt: new Date(),
       },
       { new: true }
@@ -442,13 +442,13 @@ export const esewaSuccess = async (req, res) => {
       `${FRONTEND_URL}/payment-success?pickupId=${payment.pickupId}`
     );
   } catch (err) {
-    console.error("esewaSuccess error:", err.message);
+    console.error("pixSuccess error:", err.message);
     return res.redirect(`${FRONTEND_URL}/payment-failed?reason=server_error`);
   }
 };
 
-// ── GET /api/payments/esewa/failure ───────────────────────────────────────
-export const esewaFailure = async (req, res) => {
+// ── GET /api/payments/pix/failure ───────────────────────────────────────
+export const pixFailure = async (req, res) => {
   try {
     const data = req.query.data || req.body?.data;
     if (data) {
@@ -458,9 +458,9 @@ export const esewaFailure = async (req, res) => {
           { transactionUuid: decoded.transaction_uuid, status: "PENDING" },
           {
             status: "FAILED",
-            esewaStatus: decoded.status || "FAILED",
+            pixStatus: decoded.status || "FAILED",
             failedAt: new Date(),
-            failureReason: "User cancelled or eSewa reported failure",
+            failureReason: "User cancelled or PagSeguro Pix reported failure",
           },
           { new: true }
         );
@@ -475,7 +475,7 @@ export const esewaFailure = async (req, res) => {
     }
     return res.redirect(`${FRONTEND_URL}/payment-failed?reason=cancelled`);
   } catch (err) {
-    console.error("esewaFailure error:", err.message);
+    console.error("pixFailure error:", err.message);
     return res.redirect(`${FRONTEND_URL}/payment-failed?reason=server_error`);
   }
 };

@@ -3,10 +3,10 @@ Truck assignment algorithm for ML-predicted waste schedules.
 Assigns real database trucks to districts based on predicted waste volume,
 truck capacity, and driver proximity.
 
-Nepal-context truck capacity tiers:
-  - Light duty:  < 1,000 kg  (Tata Ace, small pickups — narrow gallis)
-  - Medium duty: 1,000–3,500 kg (Tata 407, Eicher — standard municipal)
-  - Heavy duty:  > 3,500 kg  (Compactors, Ashok Leyland — main roads)
+Brazil-context truck capacity tiers:
+  - Light duty:  < 1,000 kg  (small pickup for narrow streets)
+  - Medium duty: 1,000-3,500 kg (standard urban collection truck)
+  - Heavy duty:  > 3,500 kg  (compactor or larger cooperative truck)
 """
 
 import math
@@ -20,7 +20,7 @@ BEAM_WIDTH = 250
 def get_duty_type_for_waste(waste_kg):
     """
     Determine required truck duty type based on predicted waste.
-    Nepal-context thresholds:
+    Brazil-context thresholds:
       < 1,000 kg  → light duty (small pickup fits)
       1,000–3,500 → medium duty (standard municipal truck)
       > 3,500     → heavy duty (compactor needed)

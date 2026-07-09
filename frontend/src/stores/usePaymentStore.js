@@ -24,7 +24,7 @@ const usePaymentStore = create((set) => ({
       const res = await api.post("/payments/initiate", { pickupId, method });
       set({ loading: false, lastPayment: res.data.payment });
 
-      if (method === "esewa") {
+      if (method === "pix") {
         // Build a hidden form and submit it to Pix's checkout URL.
         // The browser is redirected; Pix will later redirect back to our
         // success/failure URLs which the backend handles.

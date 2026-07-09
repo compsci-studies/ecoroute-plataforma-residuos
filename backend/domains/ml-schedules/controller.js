@@ -52,26 +52,26 @@ function getLocalTodayUTC() {
 }
 
 const FALLBACK_AREA_TYPES = {
-  "Sao-Paulo-Core": "commercial",
-  Baneshwor: "commercial",
-  Koteshwor: "commercial",
-  Balaju: "residential",
-  Maharajgunj: "residential",
-  Budhanilkantha: "suburban",
-  Tokha: "suburban",
-  Chandragiri: "rural",
-  Lalitpur: "commercial",
-  Satdobato: "commercial",
-  Kirtipur: "residential",
-  Imadol: "residential",
-  Lubhu: "suburban",
-  Godawari: "rural",
-  Dakshinkali: "rural",
-  Bhaktapur: "commercial",
-  "Madhyapur Thimi": "residential",
-  Suryabinayak: "suburban",
-  Changunarayan: "rural",
-  Nagarkot: "rural",
+  Centro: "commercial",
+  "Bela Vista": "commercial",
+  Pinheiros: "commercial",
+  Brás: "commercial",
+  Liberdade: "commercial",
+  "Vila Mariana": "residential",
+  Mooca: "residential",
+  Tatuapé: "residential",
+  Santana: "residential",
+  Lapa: "residential",
+  Butantã: "suburban",
+  "Vila Madalena": "commercial",
+  "Santo Amaro": "commercial",
+  Itaquera: "residential",
+  "São Mateus": "suburban",
+  Parelheiros: "rural",
+  "Osasco Centro": "commercial",
+  "Guarulhos Centro": "commercial",
+  "Santo André": "residential",
+  "São Bernardo": "industrial",
 };
 
 function getDayName(dateStr) {
@@ -513,7 +513,7 @@ function assignTrucksToAreas(mlPredictions, trucksWithDrivers, areaOrgMap, areaO
     areasData.flatMap((area) => area.assignedTrucks.map((truck) => truck.truckId))
   );
 
-  // Re-sort back to original order (by area name) for consistency
+  // Re-sort back to area name order for consistency
   areasData.sort((a, b) => a.area.localeCompare(b.area));
 
   // Calculate summary stats from our assignment

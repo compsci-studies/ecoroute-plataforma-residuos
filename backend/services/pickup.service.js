@@ -157,7 +157,7 @@ function pickupMatchesPendingDriverVisibility(pickup, driverUser) {
 
   const isOpenPendingPickup =
     pickup.status === "PENDING" &&
-    ["cash", "esewa"].includes(pickup.paymentMethod) &&
+    ["cash", "pix"].includes(pickup.paymentMethod) &&
     ["PENDING", "PAID"].includes(pickup.paymentStatus) &&
     pickup.expiresAt &&
     pickup.expiresAt > new Date();
@@ -757,7 +757,7 @@ export const getPendingPickups = async (req, res) => {
 
     const pendingPickups = await PickupRequest.find({
       status: "PENDING",
-      paymentMethod: { $in: ["cash", "esewa"] },
+      paymentMethod: { $in: ["cash", "pix"] },
       paymentStatus: { $in: ["PENDING", "PAID"] },
       expiresAt: { $gt: new Date() },
       $or: [
@@ -833,7 +833,7 @@ export const acceptPickup = async (req, res) => {
       {
         _id: req.params.id,
         status: "PENDING",
-        paymentMethod: { $in: ["cash", "esewa"] },
+        paymentMethod: { $in: ["cash", "pix"] },
         paymentStatus: { $in: ["PENDING", "PAID"] },
         expiresAt: { $gt: now },
         ...getPickupDriverAccessFilter(driverUser, requestedPickup),
@@ -1051,7 +1051,7 @@ const TIMESTAMP_FIELDS = {
 const COMPLETION_PAYMENT_FILTER = {
   $or: [
     { paymentMethod: "cash", paymentStatus: "PAID" },
-    { paymentMethod: "esewa", paymentStatus: "PAID" },
+    { paymentMethod: "pix", paymentStatus: "PAID" },
   ],
 };
 
@@ -1060,10 +1060,10 @@ function completionPaymentError(pickup) {
   if (pickup.paymentMethod === "cash" && pickup.paymentStatus !== "PAID") {
     return "Confirm cash payment before completing this pickup";
   }
-  if (pickup.paymentMethod === "esewa" && pickup.paymentStatus !== "PAID") {
-    return "eSewa payment must be paid before completing this pickup";
+  if (pickup.paymentMethod === "pix" && pickup.paymentStatus !== "PAID") {
+    return "PagSeguro Pix payment must be paid before completing this pickup";
   }
-  if (!["cash", "esewa"].includes(pickup.paymentMethod)) {
+  if (!["cash", "pix"].includes(pickup.paymentMethod)) {
     return "Choose a payment method before completing this pickup";
   }
   return null;

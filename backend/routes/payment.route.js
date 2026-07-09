@@ -3,8 +3,8 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleMiddleware } from "../middlewares/role.middleware.js";
 import {
   initiatePayment,
-  esewaSuccess,
-  esewaFailure,
+  pixSuccess,
+  pixFailure,
   markCashCollected,
   getPaymentByPickup,
   getAllPayments,
@@ -12,7 +12,7 @@ import {
 
 const router = express.Router();
 
-// Customer initiates a payment (cash or eSewa) for one of their pickups
+// Customer initiates a payment (cash or PagSeguro Pix) for one of their pickups
 router.post(
   "/initiate",
   authMiddleware,
@@ -20,13 +20,13 @@ router.post(
   initiatePayment
 );
 
-// eSewa redirect callbacks — UNAUTHENTICATED on purpose.
+// PagSeguro Pix redirect callbacks — UNAUTHENTICATED on purpose.
 // Security is enforced by HMAC signature verification + server-to-server
 // status confirmation inside the controller.
-router.get("/esewa/success", esewaSuccess);
-router.get("/esewa/failure", esewaFailure);
-router.post("/esewa/success", esewaSuccess);
-router.post("/esewa/failure", esewaFailure);
+router.get("/pix/success", pixSuccess);
+router.get("/pix/failure", pixFailure);
+router.post("/pix/success", pixSuccess);
+router.post("/pix/failure", pixFailure);
 
 // Driver settles a cash payment during collection, before completing a pickup
 router.post(

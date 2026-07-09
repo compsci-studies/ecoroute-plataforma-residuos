@@ -278,7 +278,7 @@ export async function buildPickupAnalytics(match) {
     : 0;
   const paymentRevenue = paymentMethodRevenueAgg.reduce(
     (acc, row) => {
-      const method = row._id === "esewa" ? "online" : "cash";
+      const method = row._id === "pix" ? "online" : "cash";
       acc[method] += Math.round(row.revenue || 0);
       return acc;
     },

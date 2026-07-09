@@ -12,7 +12,7 @@ async function listExistingIndexes(collection) {
 }
 
 /**
- * Keep the eSewa transaction UUID unique without blocking cash payments.
+ * Keep the PagSeguro Pix transaction UUID unique without blocking cash payments.
  * Older cash rows may have transactionUuid:null, which collides with a normal
  * unique index. Cash payments should not store this field at all.
  */

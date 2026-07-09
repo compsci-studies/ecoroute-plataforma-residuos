@@ -494,7 +494,7 @@ export default function BillingOverview() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-7">
-        <StatCard icon={Receipt} label={`Cobrancas ${roleLabel}`} value={summary.totalBills || 0} color="text-primary" bg="bg-primary/8" />
+        <StatCard icon={Receipt} label={`Cobranças ${roleLabel}`} value={summary.totalBills || 0} color="text-primary" bg="bg-primary/8" />
         <StatCard icon={CheckCircle2} label="Pagas" value={summary.paid || 0} color="text-green-600" bg="bg-green-100" />
         <StatCard icon={Clock} label="Em aberto" value={summary.unpaid || 0} color="text-amber-600" bg="bg-amber-100" />
         <StatCard icon={Wallet} label="Dinheiro pendente" value={summary.cashPending || 0} color="text-blue-600" bg="bg-blue-100" />
@@ -791,7 +791,7 @@ export default function BillingOverview() {
             {adminPagination && adminPagination.pages > 1 && (
               <div className="flex items-center justify-between px-5 py-4 border-t border-primary/10">
                 <p className="text-xs text-primary/40">
-                  Pagina {adminPagination.page} de {adminPagination.pages} ({adminPagination.total} contas)
+                  Página {adminPagination.page} de {adminPagination.pages} ({adminPagination.total} contas)
                 </p>
                 <div className="flex gap-2">
                   <button

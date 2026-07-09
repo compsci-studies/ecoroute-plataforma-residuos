@@ -783,7 +783,7 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
                                     setBillingPayingId(bill._id);
                                     const result = await payBill(
                                       bill._id,
-                                      "esewa",
+                                      "pix",
                                     );
                                     if (result.redirecting) return;
                                     setBillingPayingId(null);

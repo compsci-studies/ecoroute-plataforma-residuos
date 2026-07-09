@@ -22,7 +22,7 @@ const CATEGORY_LABELS = {
 
 /**
  * Pix redirects the customer's browser here after a successful payment
- * (the backend's /api/payments/esewa/success handler issues a 302 to
+ * (the backend's /api/payments/pix/success handler issues a 302 to
  * `${FRONTEND_URL}/payment-success?pickupId=...`).
  *
  * We fetch both the pickup + the latest payment record so the customer
@@ -42,7 +42,7 @@ export default function PaymentSuccessPage() {
     window.scrollTo({ top: 0, left: 0 });
     localStorage.removeItem("pending-pickup-payment");
     if (!pickupId) {
-      setError("Referencia da coleta ausente.");
+      setError("Referência da coleta ausente.");
       setLoading(false);
       return;
     }
@@ -78,7 +78,7 @@ export default function PaymentSuccessPage() {
 
   const amount = payment?.amount ?? pickup?.estimatedPrice;
   const currency = pickup?.currency || "BRL";
-  const refId = payment?.esewaRefId;
+  const refId = payment?.pixRefId;
   const paidAt = payment?.paidAt ? new Date(payment.paidAt) : null;
   const loc = pickup?.location || {};
 

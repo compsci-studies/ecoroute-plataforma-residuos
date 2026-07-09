@@ -1,1015 +1,445 @@
 # EcoRoute
 
-**Plataforma web para gerenciamento, descarte e coleta inteligente de resíduos urbanos.**
+Plataforma web full-stack para gerenciamento, descarte orientado e coleta inteligente de resíduos urbanos recicláveis.
 
-EcoRoute é um sistema full-stack desenvolvido para apoiar a destinação correta de resíduos recicláveis e a solicitação de coletas em residências, empresas e outros pontos urbanos. A proposta central é combinar um mapa de pontos reais de descarte, fluxo de solicitação de coleta sob demanda, painéis operacionais para prestadores, área administrativa, banco de dados, autenticação, dashboards e comunicação em tempo real.
+## Visão geral
 
-O projeto foi adaptado para o contexto brasileiro e preparado como parte prática de um trabalho acadêmico de Sistemas de Informação.
+A EcoRoute é uma aplicação web voltada ao contexto brasileiro de gestão de resíduos. O sistema reúne três fluxos principais: consulta de pontos de descarte, solicitação de coleta no endereço informado pelo usuário e gestão operacional por prestadores e administradores.
 
-## Sumário
+O projeto foi desenvolvido como demonstração completa para Sistemas de Informação, com frontend, backend, banco de dados, autenticação, perfis de acesso, mapas, precificação, painel administrativo, agenda, notificações, cobrança demonstrativa via Pix e módulo de previsão para apoio à distribuição de coletas.
 
-- [Visão Geral](#visão-geral)
-- [Objetivo Acadêmico](#objetivo-acadêmico)
-- [Demonstração Online](#demonstração-online)
-- [Perfis de Demonstração](#perfis-de-demonstração)
-- [Principais Funcionalidades](#principais-funcionalidades)
-- [Arquitetura](#arquitetura)
-- [Tecnologias](#tecnologias)
-- [Estrutura do Repositório](#estrutura-do-repositório)
-- [Fluxos do Sistema](#fluxos-do-sistema)
-- [Mapa e Pontos de Descarte](#mapa-e-pontos-de-descarte)
-- [Coleta Sob Demanda](#coleta-sob-demanda)
-- [Painel do Cliente](#painel-do-cliente)
-- [Painel do Prestador](#painel-do-prestador)
-- [Painel de Administração](#painel-de-administração)
-- [Autenticação e Sessões Demo](#autenticação-e-sessões-demo)
-- [API Backend](#api-backend)
-- [Modelagem de Dados](#modelagem-de-dados)
-- [Serviço de IA e Agenda Inteligente](#serviço-de-ia-e-agenda-inteligente)
-- [Tempo Real com Socket.IO](#tempo-real-com-socketio)
-- [Pagamentos e Cobranças](#pagamentos-e-cobranças)
-- [Instalação Local](#instalação-local)
-- [Variáveis de Ambiente](#variáveis-de-ambiente)
-- [Scripts Disponíveis](#scripts-disponíveis)
-- [Testes e Qualidade](#testes-e-qualidade)
-- [Deploy](#deploy)
-- [Segurança](#segurança)
-- [Limitações Conhecidas](#limitações-conhecidas)
-- [Roadmap Sugerido](#roadmap-sugerido)
-- [Créditos e Licença](#créditos-e-licença)
+## Problema atendido
 
-## Visão Geral
+O descarte incorreto de resíduos recicláveis ocorre, em parte, porque o cidadão não encontra rapidamente onde descartar cada material ou não consegue transportar o resíduo até um ecoponto. Empresas, condomínios e residências também precisam de uma forma simples de solicitar retirada no próprio endereço, com preço calculado por material, peso, volume e distância.
 
-A EcoRoute resolve dois problemas práticos:
+A EcoRoute centraliza essas necessidades em uma única plataforma:
 
-1. **Descarte correto de resíduos**: o cidadão informa material, localização ou endereço e visualiza pontos apropriados de descarte próximos, com dados reais/cadastrados para São Paulo.
-2. **Coleta inteligente sob demanda**: o usuário solicita retirada de resíduos em residência, empresa ou outro local, com estimativa de preço baseada em distância, complexidade, tipo de material, peso/volume e regras de precificação.
+- consulta de pontos de descarte por material com endereços verificáveis;
+- mapa com ecopontos e cooperativas da base demonstrativa brasileira;
+- pedido de coleta domiciliar ou empresarial;
+- estimativa de preço por tipo, peso, volume e deslocamento;
+- painel do cliente com histórico e cobranças;
+- painel do prestador com tarefas, rotas e status;
+- painel de administração para gestão de usuários, veículos, áreas, faturamento e indicadores.
 
-Além da experiência pública, a aplicação inclui painéis internos para acompanhar pedidos, pagamentos, veículos, coletores, organizações, usuários, relatórios e agenda operacional.
+## Perfis de demonstração
 
-## Objetivo Acadêmico
+A aplicação possui três rotas de entrada para demonstração:
 
-Curso: **Sistemas de Informação**
+| Perfil | Rota | E-mail | Senha |
+| --- | --- | --- | --- |
+| Cliente | `/demo/cliente` | `demo@ecoroute.com.br` | `EcoRoute@2026` |
+| Prestador | `/demo/prestador` | `prestador@ecoroute.com.br` | `EcoRoute@2026` |
+| Administração | `/demo/dono` | `dono@ecoroute.com.br` | `EcoRoute@2026` |
 
-Tema: **Plataforma web para Gerenciamento e Coleta Inteligente de Resíduos Urbanos**
+Essas rotas criam uma sessão local com token demonstrativo e carregam dados previamente preparados para apresentar o funcionamento do sistema sem depender de cadastro manual.
 
-Nome da plataforma: **EcoRoute**
-
-Requisitos atendidos pela aplicação:
-
-- aplicação web funcional;
-- frontend separado;
-- backend separado;
-- banco de dados;
-- mapa funcional;
-- consulta e exibição de pontos de descarte;
-- solicitação de coleta por usuário;
-- cadastro/autenticação;
-- painel para cliente;
-- painel para prestador/coletor;
-- painel administrativo;
-- arquitetura documentada;
-- rotas de API;
-- uso de tecnologias reais de mercado.
-
-## Demonstração Online
-
-Instância publicada no Railway:
-
-- Frontend: [https://frontend-production-abe7a.up.railway.app](https://frontend-production-abe7a.up.railway.app)
-- Backend/API: [https://backend-production-a606.up.railway.app](https://backend-production-a606.up.railway.app)
-- Health check da API: [https://backend-production-a606.up.railway.app/api/health](https://backend-production-a606.up.railway.app/api/health)
-
-Rotas úteis:
-
-- Landing page: `/`
-- Experiência pública de descarte/coleta: `/request-pickup`
-- Entrada demo cliente: `/demo/cliente`
-- Entrada demo prestador: `/demo/prestador`
-- Entrada demo administração: `/demo/dono`
-- Login manual: `/login`
-
-## Perfis de Demonstração
-
-Os perfis abaixo foram criados para apresentação sem depender de cadastro real:
-
-| Perfil | E-mail | Senha | Rota rápida | Finalidade |
-| --- | --- | --- | --- | --- |
-| Cliente | `demo@ecoroute.com.br` | `EcoRoute@2026` | `/demo/cliente` | Solicitar coleta, consultar agenda, ver cobranças e painel do cliente. |
-| Prestador | `prestador@ecoroute.com.br` | `EcoRoute@2026` | `/demo/prestador` | Ver pedidos pendentes, agenda de áreas e fluxo operacional de coleta. |
-| Administração | `dono@ecoroute.com.br` | `EcoRoute@2026` | `/demo/dono` | Acessar visão de dono/superadministrador, relatórios, organizações, veículos, usuários e cobrança. |
-
-Esses perfis usam tokens fixos de demonstração no frontend. Chamadas de API desses perfis são interceptadas por mocks locais seguros quando necessário, evitando erro de token expirado em telas demonstrativas.
-
-## Principais Funcionalidades
+## Funcionalidades principais
 
 ### Área pública
 
-- Landing page institucional da EcoRoute.
-- Apresentação de serviços, proposta ambiental e funcionalidades.
-- Página de solicitação pública de coleta.
-- Mapa com pontos de descarte.
-- Filtros por material.
-- Estimativa de coleta.
-- Geração de protocolo demonstrativo.
-- Páginas de ajuda, contato, equipe e sobre.
+- página inicial institucional da EcoRoute;
+- consulta e simulação de coleta;
+- mapa com pontos de descarte por tipo de resíduo;
+- seleção de endereço pelo mapa;
+- estimativa de custo de retirada;
+- páginas de contato, ajuda e informações gerais.
 
 ### Cliente
 
-- Login por senha e fluxo de OTP.
-- Dashboard com indicadores de coletas.
-- Solicitação de coleta.
-- Acompanhamento de status.
-- Histórico de coletas.
-- Tela de cobrança.
-- Visualização de agenda pública.
-- Perfil do usuário.
-- Notificações de status em tempo real.
+- painel com indicadores de pedidos;
+- solicitação de coleta;
+- upload de imagem do resíduo;
+- acompanhamento de status;
+- histórico de cobranças;
+- pagamento em dinheiro ou Pix demonstrativo;
+- comprovante de pagamento;
+- perfil do usuário.
 
-### Prestador/coletor
+### Prestador
 
-- Dashboard operacional.
-- Lista de pedidos pendentes.
-- Aceite de tarefa.
-- Visualização de rota.
-- Fluxo de atendimento da coleta.
-- Atualização de status.
-- Agenda diária por áreas.
-- Notificações.
-- Perfil.
-- Navegação inferior otimizada para uso em celular.
+- painel de disponibilidade;
+- listagem de tarefas;
+- aceite de coleta;
+- visualização de rota;
+- fluxo operacional de atendimento;
+- atualização de status;
+- confirmação de pagamento em dinheiro;
+- notificações de operação.
 
 ### Administração
 
-- Painel administrativo.
-- Gestão de organizações.
-- Gestão de usuários.
-- Gestão de administradores.
-- Gestão de veículos.
-- Gestão de coletores.
-- Gestão de áreas.
-- Relatórios.
-- Histórico operacional.
-- Estatísticas de coletas.
-- Configuração de preços.
-- Cobranças e faturamento.
-- Contato/suporte.
-- Notificações internas.
+- painel geral com indicadores;
+- gestão de usuários;
+- gestão de cooperativas;
+- gestão de áreas de atendimento;
+- gestão de motoristas;
+- gestão de veículos;
+- painel de cobrança;
+- configuração de preços;
+- estatísticas de coleta;
+- relatórios;
+- mensagens internas;
+- agenda inteligente com apoio de ML.
 
 ## Arquitetura
 
-```mermaid
-flowchart LR
-  Publico["Usuário público"] --> Frontend["React + Vite"]
-  Cliente["Cliente autenticado"] --> Frontend
-  Prestador["Prestador / coletor"] --> Frontend
-  Admin["Administração"] --> Frontend
+A EcoRoute utiliza uma arquitetura cliente-servidor:
 
-  Frontend --> API["Node.js + Express"]
-  Frontend <--> Socket["Socket.IO"]
-  API <--> Socket
+- **Frontend:** React, Vite, Zustand, Tailwind CSS, Leaflet e componentes reutilizáveis.
+- **Backend:** Node.js, Express, Mongoose, autenticação JWT, controllers, services e middlewares.
+- **Banco de dados:** MongoDB.
+- **Tempo real:** Socket.IO para avisos operacionais.
+- **Agenda e automação:** node-cron para rotinas internas.
+- **ML demonstrativo:** FastAPI, scikit-learn e modelo Gradient Boosting para previsão de volume de resíduos por área.
+- **Deploy:** Railway, com serviços separados para frontend e backend dentro do mesmo projeto.
 
-  API --> Mongo["MongoDB"]
-  API --> Demo["Dados públicos de demonstração"]
-  API --> Recicla["Recicla Sampa"]
-  API --> ORS["OpenRouteService"]
-  API --> Email["Brevo ou SMTP"]
-  API --> Cloudinary["Cloudinary"]
-  API --> Billing["Cobranças e pagamentos"]
-  API --> MLClient["Cliente de IA"]
-  MLClient --> ML["FastAPI + scikit-learn"]
+## Estrutura de pastas
+
+```text
+.
+├── backend/
+│   ├── app.js
+│   ├── server.js
+│   ├── controllers/
+│   ├── routes/
+│   ├── models/
+│   ├── services/
+│   ├── middlewares/
+│   ├── domains/
+│   ├── data/
+│   └── tests/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── stores/
+│   │   ├── utils/
+│   │   └── assets/
+│   ├── public/
+│   └── server.js
+├── ml/
+│   ├── data/
+│   ├── models/
+│   ├── main.py
+│   ├── train.py
+│   ├── model.py
+│   ├── scheduler.py
+│   ├── data_generator.py
+│   └── brazil_holidays.py
+├── package.json
+├── railway.json
+└── README.md
 ```
 
-### Separação principal
+## Backend
 
-O sistema está organizado em três aplicações:
+O backend concentra regras de negócio, persistência e integração entre módulos.
 
-1. **Backend**
-   - API REST;
-   - autenticação;
-   - regras de negócio;
-   - persistência;
-   - Socket.IO;
-   - jobs agendados;
-   - integração com serviços externos.
+### Principais grupos de rotas
 
-2. **Frontend**
-   - SPA em React;
-   - rotas públicas e protegidas;
-   - dashboards;
-   - mapas;
-   - estados globais;
-   - experiência mobile/desktop.
+| Grupo | Finalidade |
+| --- | --- |
+| `/api/auth` | autenticação, cadastro e sessão |
+| `/api/demo` | dados e rotas de demonstração |
+| `/api/pickups` | pedidos de coleta |
+| `/api/payments` | pagamento de pedidos |
+| `/api/billing` | cobranças mensais |
+| `/api/locations` | pontos e locais |
+| `/api/organizations` | cooperativas e organizações |
+| `/api/drivers` | prestadores/motoristas |
+| `/api/areas` | áreas de atendimento |
+| `/api/ml-schedule` | agenda inteligente |
+| `/api/contact` | mensagens de contato |
+| `/api/history` | histórico operacional |
+| `/api/notifications` | notificações |
 
-3. **ML**
-   - serviço Python/FastAPI;
-   - predição de volume;
-   - agenda inteligente;
-   - módulo experimental herdado, com necessidade de retreinamento para dados brasileiros em produção.
+### Camadas internas
 
-## Tecnologias
+- **Routes:** recebem as chamadas HTTP e aplicam middlewares.
+- **Controllers:** coordenam entrada, validação e resposta.
+- **Services:** concentram regras reutilizáveis.
+- **Models:** definem entidades MongoDB via Mongoose.
+- **Domains:** organizam regras por área funcional.
+- **Middlewares:** tratam autenticação, papel, upload, limite de requisição e segurança.
 
-### Frontend
+## Banco de dados
 
-- React 19
-- Vite
-- React Router
-- Zustand
-- Axios
-- Tailwind CSS
-- Leaflet
-- React Leaflet
-- Lucide React
-- Chart.js
-- React Chart.js 2
-- Socket.IO Client
-- Three.js
-- GSAP
+As principais entidades são:
+
+| Modelo | Descrição |
+| --- | --- |
+| `User` | usuários dos perfis cliente, prestador e administração |
+| `Organization` | cooperativas ou organizações de coleta |
+| `Area` | regiões atendidas |
+| `Truck` | veículos disponíveis |
+| `PickupRequest` | solicitação de coleta |
+| `PickupEvent` | eventos do ciclo de vida da coleta |
+| `Payment` | transações de pagamento de pedidos |
+| `Billing` | cobranças mensais |
+| `PricingConfig` | configuração de preço |
+| `Location` | pontos de coleta/descarte |
+| `MLSchedule` | agenda gerada para operação |
+| `WasteLog` | dados de apoio ao módulo de previsão |
+
+## Fluxo de coleta
+
+1. O usuário informa endereço, tipo de resíduo, peso/volume e observações.
+2. O sistema consulta pontos e calcula estimativa.
+3. O pedido é criado em `PickupRequest`.
+4. O pagamento é escolhido: dinheiro ou Pix demonstrativo.
+5. O pedido é liberado para prestadores.
+6. O prestador aceita a tarefa.
+7. A tarefa passa por deslocamento, chegada, coleta e conclusão.
+8. O cliente acompanha o status no painel.
+9. A administração vê indicadores e histórico.
+
+## Precificação
+
+O cálculo considera:
+
+- categoria do resíduo;
+- dificuldade ou nível informado;
+- peso estimado;
+- volume;
+- distância entre endereço e base/cooperativa;
+- área atendida;
+- parâmetros configuráveis no painel administrativo.
+
+O objetivo é demonstrar uma regra de negócio coerente com a proposta da work order: cobrança por peso, volume e tipo de material.
+
+## Pagamento Pix demonstrativo
+
+A aplicação usa um serviço interno chamado `pixService`. Ele simula o contrato de uma integração Pix/PagSeguro:
+
+- gera um identificador único de transação;
+- assina o payload no backend;
+- envia o usuário para um callback demonstrativo;
+- valida a assinatura no retorno;
+- marca o pagamento como concluído;
+- grava uma referência `PAGSEGURO-PIX-*`.
+
+Esse fluxo é suficiente para apresentação acadêmica e não processa pagamento real.
+
+Variáveis relacionadas:
+
+```env
+PAGSEGURO_MERCHANT_ID=ECOROUTE-DEMO
+PAGSEGURO_SECRET_KEY=replace-with-demo-signature-secret
+```
+
+## Frontend
+
+O frontend foi construído com React e Vite. A interface usa navegação por perfil, rotas protegidas, estados globais com Zustand, componentes reutilizáveis e assets brasileiros.
+
+### Rotas públicas
+
+| Rota | Tela |
+| --- | --- |
+| `/` | página inicial |
+| `/request-pickup` | consulta/simulação de coleta |
+| `/about-us` | sobre |
+| `/contact-us` | contato |
+| `/help-support` | ajuda |
+| `/login` | login |
+| `/signup` | cadastro |
+
+### Rotas autenticadas do cliente
+
+| Rota | Tela |
+| --- | --- |
+| `/customer-dashboard` | painel do cliente |
+| `/upload-waste` | envio de resíduo |
+| `/schedule` | agenda |
+| `/billing` | cobranças |
+| `/searching` | busca de prestador |
+| `/payment-success` | comprovante |
+| `/profile` | perfil |
+
+### Rotas autenticadas do prestador
+
+| Rota | Tela |
+| --- | --- |
+| `/driver-dashboard` | painel do prestador |
+| `/accept-task` | aceitar tarefa |
+| `/task-route/:pickupId` | rota da coleta |
+| `/task-flow/:pickupId` | fluxo de atendimento |
+| `/driver-notifications` | notificações |
+
+### Rotas administrativas
+
+| Rota | Tela |
+| --- | --- |
+| `/admin-dashboard` | painel geral |
+| `/admin-dashboard/users` | usuários |
+| `/admin-dashboard/organizations` | cooperativas |
+| `/admin-dashboard/areas` | áreas |
+| `/admin-dashboard/drivers` | prestadores |
+| `/admin-dashboard/vehicles` | veículos |
+| `/admin-dashboard/billing` | cobranças |
+| `/admin-dashboard/pricing` | preços |
+| `/admin-dashboard/pickup-stats` | estatísticas |
+| `/admin-dashboard/reports` | relatórios |
+| `/admin-dashboard/contact` | contato |
+
+## ML e agenda inteligente
+
+O módulo `ml` gera previsão de volume de resíduos por área e apoia a distribuição de veículos. Ele usa um dataset sintético da Grande São Paulo, com:
+
+- bairros e regiões paulistas;
+- estações brasileiras;
+- feriados nacionais e municipais;
+- variação por fim de semana;
+- tipos de região: comercial, residencial, suburbana, rural e industrial.
+
+Arquivos principais:
+
+| Arquivo | Função |
+| --- | --- |
+| `data_generator.py` | gera dataset sintético |
+| `brazil_holidays.py` | define feriados brasileiros |
+| `train.py` | treina o modelo |
+| `model.py` | carrega modelo e faz previsão |
+| `scheduler.py` | distribui veículos |
+| `main.py` | expõe API FastAPI |
+
+## Instalação local
+
+### Requisitos
+
+- Node.js 20 ou superior;
+- npm;
+- MongoDB local ou URL MongoDB Atlas;
+- Python 3.12 ou superior para o módulo ML;
+- navegador moderno.
 
 ### Backend
 
-- Node.js
-- Express 5
-- MongoDB
-- Mongoose
-- Socket.IO
-- JSON Web Token
-- Helmet
-- CORS
-- Multer
-- Cloudinary
-- Nodemailer
-- Brevo API
-- Node Cron
-- OpenRouteService
-
-### Machine Learning
-
-- Python
-- FastAPI
-- Uvicorn
-- scikit-learn
-- pandas
-- numpy
-- joblib
-- pydantic
-
-### Infraestrutura
-
-- Railway para deploy do frontend, backend e MongoDB.
-- MongoDB gerenciado no Railway.
-- GitHub Actions para CI.
-
-## Estrutura do Repositório
-
-```text
-ecoroute-platform/
-  .github/
-    workflows/
-      ci.yml
-  backend/
-    app.js
-    server.js
-    config/
-    controllers/
-    data/
-    domains/
-    middlewares/
-    models/
-    routes/
-    scripts/
-    services/
-    socket/
-    tests/
-    utils/
-  frontend/
-    index.html
-    package.json
-    railway.json
-    server.js
-    src/
-      assets/
-      components/
-      context/
-      hooks/
-      pages/
-      routes/
-      stores/
-      utils/
-  ml/
-    main.py
-    model.py
-    scheduler.py
-    train.py
-    requirements.txt
-    data/
-    models/
-  .env.example
-  .gitignore
-  .railwayignore
-  package.json
-  package-lock.json
-  railway.json
-  README.md
-```
-
-## Fluxos do Sistema
-
-### Fluxo público de descarte
-
-```mermaid
-sequenceDiagram
-  actor U as Usuário
-  participant F as Frontend
-  participant B as Backend
-  participant R as Recicla Sampa
-  participant C as Cache EcoRoute
-
-  U->>F: Informa material e endereço
-  F->>B: GET /api/demo/dropoff-points
-  B->>R: Consulta pontos próximos quando há endereço
-  alt Recicla Sampa retorna pontos
-    B-->>F: Pontos reais ao vivo
-  else Falha ou sem endereço suficiente
-    B->>C: Usa base oficial/cacheada
-    B-->>F: Pontos cadastrados em São Paulo
-  end
-  F-->>U: Exibe mapa, cartões e distâncias
-```
-
-### Fluxo de coleta sob demanda
-
-```mermaid
-sequenceDiagram
-  actor C as Cliente
-  participant F as Frontend
-  participant B as Backend
-  participant M as MongoDB
-  participant S as Socket.IO
-  actor P as Prestador
-
-  C->>F: Informa resíduo, peso, volume e local
-  F->>B: Calcula estimativa
-  B-->>F: Preço, distância e janela de coleta
-  C->>F: Confirma solicitação
-  F->>B: POST /api/pickups
-  B->>M: Persiste pedido
-  B->>S: Emite novo pedido
-  S-->>P: Notificação em tempo real
-  P->>B: Aceita coleta
-  B->>M: Atualiza status
-  B->>S: Notifica cliente
-  P->>B: Finaliza atendimento
-  B->>M: Registra conclusão
-```
-
-## Mapa e Pontos de Descarte
-
-O módulo público de mapa está focado no problema da destinação incorreta de resíduos. Ele oferece:
-
-- pontos de descarte apropriados por material;
-- filtros por tipo de resíduo;
-- distância aproximada a partir da localização informada;
-- integração com base pública quando possível;
-- fallback para base local de pontos em São Paulo;
-- exibição de origem da informação;
-- interface visual com mapa Leaflet.
-
-Materiais suportados no protótipo:
-
-- recicláveis;
-- papel;
-- plástico;
-- metal;
-- vidro;
-- eletrônicos;
-- óleo;
-- pilhas;
-- lâmpadas;
-- entulho;
-- móveis;
-- eletrodomésticos.
-
-Arquivos principais:
-
-- `backend/data/saoPauloDropoffPoints.js`
-- `backend/services/ecorouteDemo.service.js`
-- `backend/controllers/ecorouteDemo.controller.js`
-- `backend/routes/ecorouteDemo.route.js`
-- `frontend/src/pages/EcoRouteDemo.jsx`
-
-## Coleta Sob Demanda
-
-O módulo de coleta permite que o usuário informe:
-
-- nome;
-- contato;
-- endereço;
-- localização no mapa;
-- tipo de material;
-- peso estimado;
-- volume estimado;
-- observações.
-
-O backend estima:
-
-- categoria operacional;
-- nível de complexidade;
-- distância da base;
-- preço estimado;
-- composição do preço;
-- duração aproximada;
-- janela de atendimento.
-
-O cálculo usa:
-
-- regras de precificação;
-- distância de rota;
-- fallback geográfico quando o serviço externo de rota não responde;
-- categoria do material;
-- nível de dificuldade.
-
-## Painel do Cliente
-
-Rotas principais:
-
-- `/customer-dashboard`
-- `/schedule`
-- `/upload-waste`
-- `/billing`
-- `/profile`
-
-O painel do cliente exibe:
-
-- total de pedidos;
-- coletas concluídas;
-- coletas em andamento;
-- pendências;
-- cancelamentos;
-- cobranças;
-- tendências;
-- materiais;
-- complexidade;
-- histórico recente.
-
-No modo demonstração, o cliente usa dados estáveis para apresentação.
-
-## Painel do Prestador
-
-Rotas principais:
-
-- `/driver-dashboard`
-- `/accept-task`
-- `/task-route/:pickupId`
-- `/task-flow/:pickupId`
-- `/driver-ml-assignments`
-- `/driver-notifications`
-- `/profile`
-
-O painel do prestador foi projetado para uso operacional em campo:
-
-- cartões rápidos;
-- navegação inferior;
-- pedidos pendentes;
-- aceite de coleta;
-- agenda de áreas;
-- rota;
-- atualização de status;
-- coleta ativa;
-- alertas.
-
-No modo demonstração, o prestador aparece como online sem abrir Socket.IO real, porque os tokens fixos de demo não são JWTs reais do backend.
-
-## Painel de Administração
-
-Rotas principais:
-
-- `/admin-dashboard`
-- `/admin-dashboard/organizations`
-- `/admin-dashboard/my-organization`
-- `/admin-dashboard/users`
-- `/admin-dashboard/vehicles`
-- `/admin-dashboard/drivers`
-- `/admin-dashboard/reports`
-- `/admin-dashboard/pickup-stats`
-- `/admin-dashboard/history`
-- `/admin-dashboard/pricing`
-- `/admin-dashboard/billing`
-- `/admin-dashboard/my-billing`
-- `/admin-dashboard/contact`
-
-O painel administrativo contempla:
-
-- visão executiva;
-- gráficos;
-- relatórios;
-- gestão de cooperativas/organizações;
-- gestão de veículos;
-- gestão de coletores;
-- gestão de usuários;
-- controle de faturas;
-- configuração de preços;
-- histórico de coletas;
-- mensagens e notificações.
-
-## Autenticação e Sessões Demo
-
-O sistema suporta:
-
-- login por senha;
-- login por OTP;
-- JWT;
-- controle de papéis;
-- rotas protegidas;
-- demo com tokens fixos.
-
-Papéis válidos:
-
-| Papel | Descrição |
-| --- | --- |
-| `customer_admin` | Cliente final ou responsável por conta cliente. |
-| `driver` | Prestador/coletor responsável por atendimento operacional. |
-| `admin` | Administrador de uma organização/cooperativa. |
-| `super_admin` | Dono ou administrador geral da plataforma. |
-
-Arquivos principais:
-
-- `frontend/src/stores/useAuthStore.js`
-- `frontend/src/utils/demoAuth.js`
-- `frontend/src/utils/demoApiMocks.js`
-- `frontend/src/components/auth/ProtectedRoute.jsx`
-- `backend/middlewares/auth.middleware.js`
-- `backend/middlewares/role.middleware.js`
-
-## API Backend
-
-Prefixo padrão: `/api`
-
-### Rotas públicas e institucionais
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/api/health` | Verifica status da API. |
-| `GET` | `/api/demo/dropoff-points` | Lista pontos de descarte por material/localização. |
-| `POST` | `/api/demo/pickup-estimate` | Calcula estimativa demonstrativa de coleta. |
-| `POST` | `/api/demo/pickup-requests` | Cria protocolo demonstrativo de coleta. |
-| `GET` | `/api/demo/metrics` | Retorna métricas do módulo demo. |
-
-### Autenticação
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/api/auth/register` | Cadastro. |
-| `POST` | `/api/auth/login` | Login por senha. |
-| `POST` | `/api/auth/request-otp` | Solicita OTP. |
-| `POST` | `/api/auth/verify-otp` | Verifica OTP. |
-| `GET` | `/api/auth/me` | Retorna usuário autenticado. |
-
-### Coletas
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/api/pickups/pending` | Pedidos pendentes para prestadores. |
-| `GET` | `/api/pickups/my` | Pedidos do cliente. |
-| `POST` | `/api/pickups` | Cria pedido de coleta. |
-| `POST` | `/api/pickups/:id/accept` | Prestador aceita pedido. |
-| `PATCH` | `/api/pickups/:id/status` | Atualiza status. |
-| `POST` | `/api/pickups/:id/cancel` | Cancela pedido. |
-
-### Gestão
-
-| Prefixo | Finalidade |
-| --- | --- |
-| `/api/super-admin` | Administração global. |
-| `/api/org-admin` | Administração de organização. |
-| `/api/driver` | Recursos do prestador. |
-| `/api/user` | Recursos de usuário. |
-| `/api/areas` | Áreas de atendimento. |
-| `/api/location` | Localização e rotas. |
-| `/api/schedule` | Agenda manual/legada. |
-| `/api/ml-schedule` | Agenda inteligente. |
-| `/api/notifications` | Notificações. |
-| `/api/history` | Histórico. |
-| `/api/pricing-config` | Configuração de preços. |
-| `/api/payments` | Pagamentos. |
-| `/api/billing` | Cobranças. |
-| `/api/contact` | Contato/suporte. |
-| `/api/internal-messages` | Mensagens internas. |
-
-## Modelagem de Dados
-
-Principais modelos Mongoose:
-
-| Modelo | Responsabilidade |
-| --- | --- |
-| `User` | Usuários, papéis, credenciais e dados de contato. |
-| `Organization` | Cooperativas/organizações participantes. |
-| `Driver` | Perfil operacional de prestador/coletor. |
-| `Truck` | Veículos, capacidade, placa e disponibilidade. |
-| `PickupRequest` | Pedido de coleta sob demanda. |
-| `PickupEvent` | Eventos de status do pedido. |
-| `PickupDailySummary` | Agregações diárias para dashboards. |
-| `Payment` | Pagamentos de coletas e faturas. |
-| `Billing` | Faturas mensais. |
-| `BillingConfig` | Regras de cobrança recorrente. |
-| `PricingConfig` | Regras de preço por categoria/complexidade/distância. |
-| `MLSchedule` | Agenda inteligente gerada por previsão. |
-| `Area` | Áreas de atendimento. |
-| `ContactMessage` | Mensagens de contato/suporte. |
-| `InternalMessage` | Comunicação interna. |
-| `notification` | Notificações persistentes. |
-| `WasteUpload` | Evidências enviadas pelo cliente. |
-
-## Serviço de IA e Agenda Inteligente
-
-O backend possui um domínio de agenda inteligente em:
-
-- `backend/domains/ml-schedules/`
-- `backend/services/mlClient.js`
-
-O serviço Python fica em:
-
-- `ml/main.py`
-- `ml/model.py`
-- `ml/scheduler.py`
-- `ml/train.py`
-
-Importante:
-
-- O serviço Python é um módulo experimental herdado.
-- O dataset e parte da nomenclatura original ainda se referem a Kathmandu/Nepal.
-- Para produção brasileira, o modelo deve ser retreinado com dados nacionais ou municipais.
-- O backend possui fallback interno para gerar agenda mesmo quando o serviço ML está offline.
-- Na instância Railway atual, o ML Python não está publicado separadamente; o backend usa a estratégia de contingência.
-
-## Tempo Real com Socket.IO
-
-O backend inicializa Socket.IO no mesmo servidor HTTP:
-
-- `backend/socket/socketServer.js`
-
-Eventos usados:
-
-- `pickup:created`
-- `pickup:accepted`
-- `pickup:cancelled`
-- `pickup:status`
-- `pickup:statusUpdate`
-- `payment:updated`
-- `notification:new`
-- `notification:counts`
-- `schedule:confirmed`
-- `schedule:updated`
-- `assignment:completed`
-- `schedule:area-completed`
-
-Salas principais:
-
-- `customer:<userId>`
-- `driver:<userId>`
-- `driver-org:<orgId>`
-- `admins`
-- `org:<orgId>`
-- `super_admins`
-
-O Socket.IO exige JWT válido. Sessões demo usam comportamento simulado no frontend.
-
-## Pagamentos e Cobranças
-
-O projeto contempla:
-
-- pagamento de coleta;
-- pagamento em dinheiro;
-- status de pagamento;
-- faturas mensais;
-- confirmação administrativa;
-- cobrança por cliente;
-- cobrança por organização;
-- relatórios de faturamento.
-
-Há código herdado de integração eSewa no projeto original. Para uso brasileiro real, recomenda-se substituir por integração Pix nacional, como:
-
-- PSP bancário;
-- Mercado Pago;
-- Gerencianet/Efi;
-- Asaas;
-- Pagar.me;
-- Stripe com método local disponível.
-
-## Instalação Local
-
-### Pré-requisitos
-
-- Node.js 22 ou superior.
-- npm.
-- MongoDB local ou MongoDB remoto.
-- Python 3.11+ se for executar o módulo ML.
-
-### 1. Clonar o repositório
-
-```bash
-git clone <url-do-repositorio>
-cd ecoroute-platform
-```
-
-### 2. Instalar dependências do backend
-
 ```bash
 npm install
-```
-
-### 3. Instalar dependências do frontend
-
-```bash
-cd frontend
-npm install
-cd ..
-```
-
-### 4. Configurar ambiente
-
-```bash
 cp .env.example .env
-```
-
-Edite `.env` com os valores locais.
-
-### 5. Subir MongoDB
-
-Exemplo com Docker:
-
-```bash
-docker run --name ecoroute-mongo -p 27017:27017 -d mongo:8.0
-```
-
-Ou use uma URL MongoDB Atlas/Railway em `MONGO_URL`.
-
-### 6. Executar backend
-
-```bash
 npm run dev
 ```
 
-Backend padrão:
+O backend roda, por padrão, em:
 
 ```text
 http://localhost:5001
 ```
 
-### 7. Executar frontend
-
-Em outro terminal:
+### Frontend
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Frontend padrão:
+O frontend roda, por padrão, em:
 
 ```text
 http://localhost:5173
 ```
 
-### 8. Abrir demonstração
-
-```text
-http://localhost:5173/demo
-http://localhost:5173/demo/cliente
-http://localhost:5173/demo/prestador
-http://localhost:5173/demo/dono
-```
-
-## Variáveis de Ambiente
-
-Arquivo base: `.env.example`
-
-| Variável | Exemplo | Obrigatória | Descrição |
-| --- | --- | --- | --- |
-| `PORT` | `5001` | Sim | Porta do backend. |
-| `NODE_ENV` | `development` | Sim | Ambiente de execução. |
-| `APP_TIMEZONE` | `America/Sao_Paulo` | Sim | Fuso usado por jobs e agenda. |
-| `MONGO_URL` | `mongodb://localhost:27017/ecoroute` | Sim | Conexão MongoDB. |
-| `JWT_SECRET` | `replace-with-a-long-random-secret` | Sim | Segredo para assinar JWT. |
-| `JWT_EXPIRES_IN` | `7d` | Sim | Validade do token. |
-| `CRON_SECRET` | `replace-with-a-long-random-secret` | Recomendado | Protege endpoints de cron. |
-| `FRONTEND_URL` | `http://localhost:5173` | Sim | Origem principal permitida. |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Recomendado | Origens adicionais. |
-| `BACKEND_URL` | `http://localhost:5001` | Sim | URL pública/local do backend. |
-| `ML_SERVICE_URL` | `http://localhost:8000` | Opcional | URL do serviço ML. |
-| `CLOUDINARY_CLOUD_NAME` | `your-cloudinary-cloud-name` | Opcional | Uploads de evidência. |
-| `CLOUDINARY_API_KEY` | `your-cloudinary-api-key` | Opcional | Uploads de evidência. |
-| `CLOUDINARY_API_SECRET` | `your-cloudinary-api-secret` | Opcional | Uploads de evidência. |
-| `SMTP_HOST` | `smtp.gmail.com` | Opcional | Envio de e-mail via SMTP. |
-| `SMTP_PORT` | `587` | Opcional | Porta SMTP. |
-| `SMTP_USER` | `your-email@gmail.com` | Opcional | Usuário SMTP. |
-| `SMTP_PASS` | `your-app-password` | Opcional | Senha SMTP. |
-| `FROM_EMAIL` | `your-email@gmail.com` | Opcional | Remetente. |
-| `BREVO_API_KEY` | vazio | Opcional | Envio de e-mail via Brevo. |
-| `BREVO_SENDER_EMAIL` | vazio | Opcional | Remetente Brevo. |
-| `BREVO_SENDER_NAME` | `EcoRoute Brasil` | Opcional | Nome do remetente. |
-| `BREVO_TIMEOUT_MS` | `10000` | Opcional | Timeout do Brevo. |
-| `ORS_API_KEY` | `your-openrouteservice-api-key` | Opcional | Rotas reais via OpenRouteService. |
-| `JSON_BODY_LIMIT` | `1mb` | Opcional | Limite do corpo JSON. |
-| `URLENCODED_BODY_LIMIT` | `1mb` | Opcional | Limite de formulário. |
-| `AUTH_RATE_LIMIT_MAX` | `20` | Opcional | Rate limit de autenticação. |
-| `OTP_REQUEST_RATE_LIMIT_MAX` | `5` | Opcional | Rate limit de pedido de OTP. |
-| `OTP_VERIFY_RATE_LIMIT_MAX` | `10` | Opcional | Rate limit de verificação de OTP. |
-
-### Variáveis do frontend
-
-No Railway, o frontend usa:
-
-| Variável | Exemplo | Descrição |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | `https://backend-production-a606.up.railway.app/api` | URL da API consumida pelo React. |
-| `VITE_API_URL` | `https://backend-production-a606.up.railway.app/api` | Compatibilidade com nome anterior. |
-| `VITE_ML_API_BASE_URL` | `https://backend-production-a606.up.railway.app/api` | Base para chamadas ML quando roteadas pelo backend. |
-
-## Scripts Disponíveis
-
-### Raiz
-
-| Script | Comando | Descrição |
-| --- | --- | --- |
-| `npm start` | `node backend/server.js` | Executa o backend em modo produção/local. |
-| `npm run dev` | `nodemon backend/server.js` | Executa o backend com reload. |
-| `npm test` | `node --test` | Executa testes Node. |
-| `npm run lint:frontend` | `npm --prefix frontend run lint -- --max-warnings=0` | Lint do frontend a partir da raiz. |
-| `npm run build:frontend` | `npm --prefix frontend run build` | Build do frontend a partir da raiz. |
-
-### Frontend
-
-| Script | Comando | Descrição |
-| --- | --- | --- |
-| `npm run dev` | `vite` | Servidor de desenvolvimento. |
-| `npm run build` | `vite build` | Build de produção. |
-| `npm run lint` | `eslint .` | Lint. |
-| `npm run preview` | `vite preview` | Preview do build. |
-| `npm start` | `node server.js` | Servidor estático usado no Railway. |
-
 ### ML
 
 ```bash
 cd ml
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python data_generator.py
+.venv/bin/python train.py
+.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-## Testes e Qualidade
+O serviço de ML roda, por padrão, em:
 
-### Testes backend
+```text
+http://localhost:8000
+```
+
+## Variáveis de ambiente
+
+As variáveis principais ficam em `.env.example`:
+
+```env
+PORT=5001
+NODE_ENV=development
+APP_TIMEZONE=America/Sao_Paulo
+MONGO_URL=mongodb://localhost:27017/ecoroute
+JWT_SECRET=replace-with-a-long-random-secret
+CRON_SECRET=replace-with-a-long-random-secret
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:5001
+ML_SERVICE_URL=http://localhost:8000
+PAGSEGURO_MERCHANT_ID=ECOROUTE-DEMO
+PAGSEGURO_SECRET_KEY=replace-with-demo-signature-secret
+```
+
+## Scripts
+
+### Raiz
+
+| Script | Comando | Função |
+| --- | --- | --- |
+| `npm start` | `node backend/server.js` | inicia backend |
+| `npm run dev` | `nodemon backend/server.js` | inicia backend com reload |
+| `npm test` | `node --test` | executa testes |
+| `npm run lint:frontend` | `npm --prefix frontend run lint -- --max-warnings=0` | lint do frontend |
+| `npm run build:frontend` | `npm --prefix frontend run build` | build do frontend |
+
+### Frontend
+
+| Script | Comando | Função |
+| --- | --- | --- |
+| `npm run dev` | `vite` | servidor local |
+| `npm run build` | `vite build` | build de produção |
+| `npm run lint` | `eslint .` | lint |
+| `npm run preview` | `vite preview` | preview |
+| `npm start` | `node server.js` | servidor estático |
+
+## Testes e validação
+
+Comandos recomendados:
 
 ```bash
 npm test
+npm --prefix frontend run lint -- --max-warnings=0
+npm --prefix frontend run build
 ```
 
-Testes focados usados na validação recente:
+Os testes cobrem:
 
-```bash
-node --test backend/tests/pickupLifecycle.test.js backend/tests/authBillingSecurity.test.js
-```
-
-### Lint frontend
-
-```bash
-cd frontend
-npm run lint -- --max-warnings=0
-```
-
-### Build frontend
-
-```bash
-cd frontend
-npm run build
-```
-
-### CI
-
-O workflow `.github/workflows/ci.yml` executa:
-
-- `npm ci`
-- `npm test`
-- `npm ci` no frontend
-- `npm run lint -- --max-warnings=0`
-- `npm run build`
+- ciclo de vida de pedidos;
+- segurança de cobrança;
+- validação de métodos de pagamento;
+- otimização de veículos;
+- rotas de demonstração.
 
 ## Deploy
 
-### Railway
+O deploy recomendado é no Railway, com backend e frontend no mesmo projeto:
 
-O projeto foi configurado para deploy no Railway com três serviços:
-
-| Serviço | Função |
-| --- | --- |
-| `backend` | API Express + Socket.IO. |
-| `frontend` | SPA React servida por `frontend/server.js`. |
-| `MongoDB` | Banco de dados persistente. |
-
-Arquivos relacionados:
-
-- `railway.json`
-- `frontend/railway.json`
-- `.railwayignore`
-- `frontend/server.js`
-
-### Backend no Railway
-
-Comando de start:
-
-```bash
-npm start
-```
-
-Healthcheck:
-
-```text
-/api/health
-```
-
-### Frontend no Railway
-
-Build:
-
-```bash
-npm install && npm run build
-```
-
-Start:
-
-```bash
-npm start
-```
-
-Healthcheck:
-
-```text
-/healthz
-```
-
-O servidor `frontend/server.js` serve arquivos estáticos do diretório `dist` e redireciona rotas internas da SPA para `index.html`.
+- serviço do backend usando `npm start`;
+- serviço do frontend usando `frontend/server.js`;
+- variáveis de ambiente configuradas no painel;
+- MongoDB Atlas ou outro MongoDB externo;
+- domínio gerado pelo Railway.
 
 ## Segurança
 
-Cuidados implementados:
+Medidas implementadas:
 
-- `.env` ignorado pelo Git.
-- JWT para rotas autenticadas.
-- Middleware de papéis.
-- Helmet.
-- CORS configurável.
-- Rate limiting em autenticação.
-- Separação entre sessão real e sessão demo.
-- Sanitização de respostas de usuário sensível.
-- Índices MongoDB para consultas críticas.
-- Tratamento de banco recém-criado sem falha de startup.
-- Não versionar `node_modules`, `dist`, screenshots de QA ou arquivos temporários.
+- autenticação JWT;
+- hash de senha;
+- controle de papel;
+- CORS configurável;
+- Helmet;
+- rate limit;
+- limite de corpo JSON;
+- verificação de assinatura no Pix demonstrativo;
+- validação de acesso por usuário, organização e papel.
 
-Cuidados recomendados antes de produção real:
+## Status acadêmico
 
-- usar domínio próprio com HTTPS;
-- trocar todos os segredos;
-- configurar MongoDB com backups;
-- configurar e-mail transacional real;
-- substituir integração de pagamento herdada por Pix nacional;
-- ativar logs centralizados;
-- revisar LGPD;
-- criar política de retenção de imagens;
-- criar termos de uso e política de privacidade;
-- configurar monitoramento.
-
-## Limitações Conhecidas
-
-- O módulo Python de ML ainda tem dados e nomenclatura herdados de Kathmandu/Nepal.
-- A instância Railway atual não publica o serviço Python de ML; o backend usa fallback.
-- A integração eSewa é herdada do projeto base e não representa método de pagamento brasileiro.
-- Algumas telas internas preservam lógica ampla do sistema original, adaptada para a apresentação EcoRoute.
-- Os perfis demo usam dados fixos para apresentação e não substituem usuários reais.
-- Pontos de descarte ao vivo dependem de disponibilidade do Recicla Sampa; há fallback local.
-
-## Roadmap Sugerido
-
-Melhorias recomendadas para evolução do projeto:
-
-1. Retreinar o módulo de IA com dados brasileiros.
-2. Integrar Pix real.
-3. Criar cadastro real de cooperativas brasileiras.
-4. Adicionar geocodificação por CEP/endereço.
-5. Incluir autenticação social.
-6. Criar app mobile ou PWA com notificações push.
-7. Adicionar painel de impacto ambiental.
-8. Calcular CO₂ evitado e massa reciclada.
-9. Integrar APIs municipais de ecopontos quando disponíveis.
-10. Criar módulo de denúncia de descarte irregular.
-11. Criar trilha de auditoria administrativa.
-12. Adicionar exportação de relatórios em PDF/CSV.
-13. Criar testes end-to-end com Playwright.
-14. Criar fixtures reais para banca/demonstração.
-
-## Créditos e Licença
-
-Projeto acadêmico adaptado para a proposta EcoRoute, com base full-stack reaproveitada e customizada para o contexto brasileiro de gestão e coleta inteligente de resíduos urbanos.
-
-Licença atual declarada no `package.json`: `ISC`.
+A EcoRoute é uma demonstração funcional de plataforma completa. O sistema apresenta frontend, backend, banco de dados, autenticação, dados de demonstração, painel administrativo, fluxo operacional e módulo de previsão. Para uso comercial, seriam necessários credenciais reais de pagamento, auditoria jurídica, política de privacidade, homologação de mapas, revisão de acessibilidade e operação permanente dos dados de ecopontos.

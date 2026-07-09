@@ -1,3 +1,3 @@
 export const paymentMethodSchema = {
-  allowedMethods: ["cash", "esewa"],
+  allowedMethods: ["cash", "pix"],
 };

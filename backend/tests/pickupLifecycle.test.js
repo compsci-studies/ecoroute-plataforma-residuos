@@ -19,7 +19,7 @@ import {
   updatePickupStatus,
 } from "../controllers/pickup.controller.js";
 import {
-  esewaSuccess,
+  pixSuccess,
   initiatePayment,
   markCashCollected,
 } from "../controllers/payment.controller.js";
@@ -87,8 +87,8 @@ function doc(fields) {
   };
 }
 
-function signedEsewaData(fields) {
-  const secret = process.env.ESEWA_SECRET_KEY;
+function signedPixData(fields) {
+  const secret = process.env.PAGSEGURO_SECRET_KEY;
   const signedFieldNames = fields.signed_field_names;
   const message = signedFieldNames
     .split(",")
@@ -101,12 +101,12 @@ function signedEsewaData(fields) {
 test.beforeEach(() => {
   process.env.FRONTEND_URL = "http://frontend.test";
   process.env.BACKEND_URL = "http://backend.test";
-  process.env.ESEWA_PRODUCT_CODE = "EPAYTEST";
-  process.env.ESEWA_SECRET_KEY = "test-secret";
+  process.env.PAGSEGURO_MERCHANT_ID = "ECOROUTE-TEST";
+  process.env.PAGSEGURO_SECRET_KEY = "test-secret";
   stub(PickupEvent, "create", async () => ({}));
   stub(Area, "findOne", () => chain({
     _id: oid("64b00000000000000000a001"),
-    name: "Ward 1",
+    name: "Pinheiros",
     orgId: oid("64b000000000000000000003"),
   }));
   stub(Area, "find", () => chain([]));
@@ -114,7 +114,7 @@ test.beforeEach(() => {
   stub(Organization, "findById", async (id) => ({
     _id: id,
     name: "Test Org",
-    location: { latitude: 27.7, longitude: 85.3, address: "Depot" },
+    location: { latitude: -23.566, longitude: -46.686, address: "Base Pinheiros" },
   }));
   stub(PricingConfig, "findOne", () => chain({
     categoryBase: { recyclable: 85, nonRecyclable: 85, mixed: 85 },
@@ -181,10 +181,10 @@ test("payment initiation ignores client-supplied amount and uses the recomputed 
     orgId,
     status: "PAYMENT_REQUIRED",
     paymentStatus: "UNPAID",
-    location: { latitude: 27.7, longitude: 85.3 },
+    location: { latitude: -23.566, longitude: -46.686 },
     category: "recyclable",
     level: "easy",
-    area: "Ward 1",
+    area: "Pinheiros",
   });
   let createdPayment;
 
@@ -212,17 +212,17 @@ test("payment initiation ignores client-supplied amount and uses the recomputed 
   assert.equal(response.body.payment.amount, 30);
 });
 
-test("eSewa callback rejects tampered callback amounts before settlement", async () => {
+test("PagSeguro Pix callback rejects tampered callback amounts before settlement", async () => {
   const pickupId = oid("64b000000000000000000010");
   const paymentId = oid("64b000000000000000000011");
-  const payment = { _id: paymentId, pickupId, amount: 30, method: "esewa", status: "PENDING" };
+  const payment = { _id: paymentId, pickupId, amount: 30, method: "pix", status: "PENDING" };
   const pickup = doc({
     _id: pickupId,
     orgId: oid("64b000000000000000000012"),
-    location: { latitude: 27.7, longitude: 85.3 },
+    location: { latitude: -23.566, longitude: -46.686 },
     category: "recyclable",
     level: "easy",
-    area: "Ward 1",
+    area: "Pinheiros",
   });
   let paymentUpdate = null;
   let pickupUpdateCalled = false;
@@ -242,10 +242,10 @@ test("eSewa callback rejects tampered callback amounts before settlement", async
   });
 
   const response = res();
-  await esewaSuccess(
+  await pixSuccess(
     {
       query: {
-        data: signedEsewaData({
+        data: signedPixData({
           transaction_uuid: "MSKY-tampered",
           total_amount: "1",
           signed_field_names: "transaction_uuid,total_amount",
@@ -335,21 +335,21 @@ test("admin pickup listing is scoped to the admin organization", async () => {
   assert.equal(response.body.data.pagination.total, 0);
 });
 
-test("cancelled pickup eSewa callbacks settle the payment without redispatching the pickup", async () => {
+test("cancelled pickup PagSeguro Pix callbacks settle the payment without redispatching the pickup", async () => {
   const pickupId = oid("64b000000000000000000040");
   const paymentId = oid("64b000000000000000000041");
-  const payment = { _id: paymentId, pickupId, amount: 30, method: "esewa", status: "PENDING" };
+  const payment = { _id: paymentId, pickupId, amount: 30, method: "pix", status: "PENDING" };
   const pickup = doc({
     _id: pickupId,
     customerId: oid("64b000000000000000000042"),
     orgId: oid("64b000000000000000000043"),
     status: "CANCELLED",
-    paymentMethod: "esewa",
+    paymentMethod: "pix",
     paymentId,
-    location: { latitude: 27.7, longitude: 85.3 },
+    location: { latitude: -23.566, longitude: -46.686 },
     category: "recyclable",
     level: "easy",
-    area: "Ward 1",
+    area: "Pinheiros",
   });
   let settled = false;
   let pickupUpdate;
@@ -368,10 +368,10 @@ test("cancelled pickup eSewa callbacks settle the payment without redispatching 
   global.fetch = async () => ({ ok: true, async json() { return { status: "COMPLETE", ref_id: "REF-1" }; } });
 
   const response = res();
-  await esewaSuccess(
+  await pixSuccess(
     {
       query: {
-        data: signedEsewaData({
+        data: signedPixData({
           transaction_uuid: "MSKY-cancelled",
           total_amount: "30",
           signed_field_names: "transaction_uuid,total_amount",
@@ -441,13 +441,13 @@ test("cash pickup cannot be completed until cash has been collected", async () =
   assert.equal(response.body.message, "Confirm cash payment before completing this pickup");
 });
 
-test("eSewa pickup cannot be completed unless payment is paid at completion time", async () => {
+test("PagSeguro Pix pickup cannot be completed unless payment is paid at completion time", async () => {
   const pickupId = oid("64b000000000000000000062");
   const driverId = oid("64b000000000000000000063");
 
-  stub(PickupRequest, "findOne", () => chain({ paymentMethod: "esewa", paymentStatus: "FAILED" }, ["select"]));
+  stub(PickupRequest, "findOne", () => chain({ paymentMethod: "pix", paymentStatus: "FAILED" }, ["select"]));
   stub(PickupRequest, "findOneAndUpdate", async () => {
-    throw new Error("status update must not run after eSewa payment fails");
+    throw new Error("status update must not run after PagSeguro Pix payment fails");
   });
 
   const response = res();
@@ -457,7 +457,7 @@ test("eSewa pickup cannot be completed unless payment is paid at completion time
   );
 
   assert.equal(response.statusCode, 400);
-  assert.equal(response.body.message, "eSewa payment must be paid before completing this pickup");
+  assert.equal(response.body.message, "PagSeguro Pix payment must be paid before completing this pickup");
 });
 
 test("driver availability is reserved on accept and released when the active pickup completes", async () => {
@@ -545,7 +545,7 @@ test("driver availability is reserved on accept and released when the active pic
   assert.equal(driverUpdates[0].update.$set.isAvailable, false);
   assert.deepEqual(pickupUpdates[1].filter.$or, [
     { paymentMethod: "cash", paymentStatus: "PAID" },
-    { paymentMethod: "esewa", paymentStatus: "PAID" },
+    { paymentMethod: "pix", paymentStatus: "PAID" },
   ]);
   assert.deepEqual(driverUpdates.at(-1).filter, { userId: driverId });
   assert.equal(driverUpdates.at(-1).update.$set.isAvailable, true);

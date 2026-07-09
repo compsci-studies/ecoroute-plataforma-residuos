@@ -363,12 +363,12 @@ function BillCard({ bill, onPay, payingId, payMethod }) {
       {(bill.status === "UNPAID" || bill.status === "OVERDUE") && (
         <div className="flex gap-3 pt-3 border-t border-white/10">
           <button
-            onClick={() => onPay(bill._id, "esewa")}
+            onClick={() => onPay(bill._id, "pix")}
             disabled={isPaying}
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CreditCard size={16} />
-            {isPaying && payMethod === "esewa" ? "Processando..." : "Pagar com Pix"}
+            {isPaying && payMethod === "pix" ? "Processando..." : "Pagar com Pix"}
           </button>
           <button
             onClick={() => onPay(bill._id, "cash")}

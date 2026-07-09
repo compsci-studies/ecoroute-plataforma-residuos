@@ -7,8 +7,8 @@ import mongoose from "mongoose";
  *  - `amount` is always a trusted server-side pickup price, recomputed before
  *    charging. Never trust the client to set the amount.
  *  - `transactionUuid` is unique per attempt and used as the idempotency key
- *    when verifying with the eSewa status API.
- *  - We never store eSewa secret keys, card data, or PII beyond the eSewa
+ *    when verifying with the PagSeguro Pix status API.
+ *  - We never store PagSeguro Pix secret keys, card data, or PII beyond the PagSeguro Pix
  *    reference id (which is a public transaction handle).
  */
 const paymentSchema = new mongoose.Schema(
@@ -36,7 +36,7 @@ const paymentSchema = new mongoose.Schema(
 
     method: {
       type: String,
-      enum: ["cash", "esewa"],
+      enum: ["cash", "pix"],
       required: true,
     },
 
@@ -47,16 +47,16 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ── eSewa-specific fields ────────────────────────────────────────────
-    // Unique idempotency key sent to eSewa (uuid)
+    // ── PagSeguro Pix-specific fields ────────────────────────────────────────────
+    // Unique idempotency key sent to PagSeguro Pix (uuid)
     transactionUuid: {
       type: String,
       default: undefined,
     },
-    // eSewa's own reference id returned after a successful payment
-    esewaRefId: { type: String, default: null },
-    // Last raw status string from eSewa (COMPLETE, PENDING, FULL_REFUND, ...)
-    esewaStatus: { type: String, default: null },
+    // PagSeguro Pix's own reference id returned after a successful payment
+    pixRefId: { type: String, default: null },
+    // Last raw status string from PagSeguro Pix (COMPLETE, PENDING, FULL_REFUND, ...)
+    pixStatus: { type: String, default: null },
 
     // Lifecycle timestamps
     initiatedAt: { type: Date, default: Date.now },

@@ -150,13 +150,13 @@ const pickupRequestSchema = new mongoose.Schema(
     // Method chosen by the customer at booking time.
     paymentMethod: {
       type: String,
-      enum: ["cash", "esewa"],
+      enum: ["cash", "pix"],
       default: null,
       index: true,
     },
     // High-level payment state - driven by the Payment record(s) for this pickup.
     //   UNPAID  - no payment attempted yet (initial)
-    //   PENDING - eSewa initiated, awaiting verification, or cash awaiting collection
+    //   PENDING - PagSeguro Pix initiated, awaiting verification, or cash awaiting collection
     //   PAID    - verified by gateway / collected by driver and confirmed
     //   FAILED  - gateway failure or driver-reported non-payment
     paymentStatus: {

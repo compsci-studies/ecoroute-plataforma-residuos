@@ -635,7 +635,7 @@ function SearchPage() {
           <div className="flex items-center gap-2">
             {flow !== "confirm" && (
               <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wide">
-                {flow === "estimate" ? "Revisao" : flow === "payment" ? "Pagamento" : flow === "searching" ? "Buscando" : flow === "found" ? "Atribuída" : "Cancelada"}
+                {flow === "estimate" ? "Revisão" : flow === "payment" ? "Pagamento" : flow === "searching" ? "Buscando" : flow === "found" ? "Atribuída" : "Cancelada"}
               </span>
             )}
           </div>
@@ -913,7 +913,7 @@ function SearchPage() {
               </button>
 
               <button
-                onClick={() => handleChoosePayment("esewa")}
+                onClick={() => handleChoosePayment("pix")}
                 disabled={payLoading}
                 className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-primary/10 hover:border-primary hover:bg-primary/5 transition disabled:opacity-50 disabled:cursor-not-allowed text-left"
               >

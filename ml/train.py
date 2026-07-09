@@ -18,7 +18,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import LabelEncoder
 
-DATA_PATH = "./data/kathmandu_waste_data.csv"
+DATA_PATH = "./data/sao_paulo_waste_data.csv"
 FEEDBACK_PATH = "./data/waste_feedback.csv"
 MODEL_PATH = "./models/waste_predictor.pkl"
 ENCODER_PATH = "./models/label_encoders.pkl"
@@ -50,13 +50,13 @@ def load_or_generate_data():
 
 
 def season_for_month(month):
-    if month in [6, 7, 8, 9]:
-        return "monsoon"
-    if month in [10, 11, 12]:
-        return "autumn"
-    if month in [1, 2]:
-        return "winter"
-    return "spring"
+    if month in [12, 1, 2]:
+        return "verao_chuvoso"
+    if month in [3, 4, 5]:
+        return "outono"
+    if month in [6, 7, 8]:
+        return "inverno_seco"
+    return "primavera"
 
 
 def add_calendar_features(df):

@@ -5,10 +5,10 @@ import User from "../models/User.model.js";
 import Area from "../models/Area.model.js";
 import { backfillUnassignedUsersForOrg } from "../services/userOrgResolver.js";
 import {
-  buildEsewaBillingPayload,
+  buildPagSeguroPixBillingPayload,
   decodeAndVerifyCallback,
   verifyTransactionStatus,
-} from "../services/esewaService.js";
+} from "../services/pixService.js";
 import { buildPaginationMeta, getPagination } from "../utils/pagination.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -358,16 +358,16 @@ export const getMyBills = async (req, res) => {
  * POST /api/billing/pay/:billingId
  *
  * For cash:  requests cash confirmation from an admin/super admin.
- * For esewa: returns signed form fields for eSewa hosted checkout redirect.
- *            The bill stays UNPAID until the eSewa callback confirms payment.
+ * For pix: returns signed form fields for PagSeguro Pix hosted checkout redirect.
+ *            The bill stays UNPAID until the PagSeguro Pix callback confirms payment.
  */
 export const payBill = async (req, res) => {
   try {
     const { billingId } = req.params;
     const { method } = req.body;
 
-    if (!method || !["cash", "esewa"].includes(method)) {
-      return res.status(400).json({ message: "Payment method must be 'cash' or 'esewa'" });
+    if (!method || !["cash", "pix"].includes(method)) {
+      return res.status(400).json({ message: "Payment method must be 'cash' or 'pix'" });
     }
 
     const bill = await Billing.findOne({
@@ -396,20 +396,20 @@ export const payBill = async (req, res) => {
       return res.json({ success: true, method: "cash", pendingConfirmation: true, bill });
     }
 
-    // ── eSewa flow ───────────────────────────────────────────────────────
-    const { transactionUuid, actionUrl, formFields } = buildEsewaBillingPayload({
+    // ── PagSeguro Pix flow ───────────────────────────────────────────────────────
+    const { transactionUuid, actionUrl, formFields } = buildPagSeguroPixBillingPayload({
       amount: bill.amount,
       billingId: bill._id.toString(),
     });
 
     // Store the transaction UUID so the callback can find this bill
     bill.transactionRef = transactionUuid;
-    bill.paymentMethod = "esewa";
+    bill.paymentMethod = "pix";
     await bill.save();
 
     return res.json({
       success: true,
-      method: "esewa",
+      method: "pix",
       actionUrl,
       formFields,
       bill,
@@ -424,12 +424,12 @@ export const payBill = async (req, res) => {
 };
 
 /**
- * GET /api/billing/esewa/success
+ * GET /api/billing/pix/success
  *
- * eSewa redirects here after successful billing payment.
+ * PagSeguro Pix redirects here after successful billing payment.
  * Same verification flow as pickup payments: signature + status API.
  */
-export const esewaBillingSuccess = async (req, res) => {
+export const pixBillingSuccess = async (req, res) => {
   try {
     const data = req.query.data || req.body?.data;
     let bill = null;
@@ -438,7 +438,7 @@ export const esewaBillingSuccess = async (req, res) => {
     try {
       decoded = decodeAndVerifyCallback(data);
     } catch (err) {
-      console.warn("[esewa-billing] callback verification failed:", err.message);
+      console.warn("[pix-billing] callback verification failed:", err.message);
       return res.redirect(`${FRONTEND_URL}/billing?payment=failed&reason=invalid_signature`);
     }
 
@@ -458,7 +458,7 @@ export const esewaBillingSuccess = async (req, res) => {
     const callbackAmount = Number(String(totalAmountStr).replace(/,/g, ""));
     if (!Number.isFinite(callbackAmount) || callbackAmount !== bill.amount) {
       console.warn(
-        `[esewa-billing] amount mismatch for ${transactionUuid}: expected ${bill.amount}, got ${callbackAmount}`
+        `[pix-billing] amount mismatch for ${transactionUuid}: expected ${bill.amount}, got ${callbackAmount}`
       );
       return redirectBillingPayment(res, bill, "payment=failed&reason=amount_mismatch");
     }
@@ -471,7 +471,7 @@ export const esewaBillingSuccess = async (req, res) => {
         totalAmount: bill.amount,
       });
     } catch (err) {
-      console.error("[esewa-billing] status API error:", err.message);
+      console.error("[pix-billing] status API error:", err.message);
       return redirectBillingPayment(res, bill, "payment=failed&reason=verification_failed");
     }
 
@@ -482,26 +482,26 @@ export const esewaBillingSuccess = async (req, res) => {
     // Mark bill as PAID
     bill.status = "PAID";
     bill.paidAt = new Date();
-    bill.paymentMethod = "esewa";
+    bill.paymentMethod = "pix";
     bill.resolvedBy = {
       userId: bill.customerId,
       role: bill.billedRole || "customer_admin",
-      name: "eSewa Payment",
+      name: "PagSeguro Pix Payment",
     };
     await bill.save();
     await markOrgAdminPeriodPaid(bill);
 
     return redirectBillingPayment(res, bill, `payment=success&billingId=${bill._id}`);
   } catch (err) {
-    console.error("esewaBillingSuccess error:", err.message);
+    console.error("pixBillingSuccess error:", err.message);
     return res.redirect(`${FRONTEND_URL}/billing?payment=failed&reason=server_error`);
   }
 };
 
 /**
- * GET /api/billing/esewa/failure
+ * GET /api/billing/pix/failure
  */
-export const esewaBillingFailure = async (req, res) => {
+export const pixBillingFailure = async (req, res) => {
   try {
     const data = req.query.data || req.body?.data;
     let bill = null;
@@ -520,7 +520,7 @@ export const esewaBillingFailure = async (req, res) => {
     }
     return redirectBillingPayment(res, bill, "payment=failed&reason=cancelled");
   } catch (err) {
-    console.error("esewaBillingFailure error:", err.message);
+    console.error("pixBillingFailure error:", err.message);
     return res.redirect(`${FRONTEND_URL}/billing?payment=failed&reason=server_error`);
   }
 };
@@ -682,7 +682,7 @@ export const getBillingOverview = async (req, res) => {
     ]);
     const paymentMethodRevenue = paymentMethodRevenueRows.reduce(
       (acc, row) => {
-        const method = row.method === "esewa" ? "online" : "cash";
+        const method = row.method === "pix" ? "online" : "cash";
         acc[method] += row.revenue || 0;
         return acc;
       },

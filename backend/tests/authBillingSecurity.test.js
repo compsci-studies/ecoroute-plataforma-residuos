@@ -70,7 +70,7 @@ test("public registration ignores client-supplied privileged role", async () => 
         name: "Customer",
         email: "customer@example.com",
         phone: "9800000000",
-        address: "Sao Paulo, Brasil",
+        address: "São Paulo, Brasil",
         role: "super_admin",
       },
     },

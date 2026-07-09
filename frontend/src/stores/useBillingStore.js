@@ -56,7 +56,7 @@ const useBillingStore = create((set, get) => ({
     try {
       const res = await api.post(`/billing/pay/${billingId}`, { method });
 
-      if (method === "esewa" && res.data.actionUrl) {
+      if (method === "pix" && res.data.actionUrl) {
         // Build a hidden form and submit to Pix checkout
         const { actionUrl, formFields } = res.data;
         const form = document.createElement("form");
