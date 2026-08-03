@@ -708,8 +708,8 @@ export const generateSchedule = async (req, res) => {
 
       await createSystemNotification({
         type: "driverless_truck",
-        title: "Trucks Without Drivers Detected",
-        message: `${driverlessTrucksList.length} truck(s) have no assigned driver and were excluded from scheduling on ${date}. Trucks: ${truckDetails.map(t => t.licensePlate).join(", ")}`,
+        title: "Veículos sem coletor",
+        message: `${driverlessTrucksList.length} ${driverlessTrucksList.length === 1 ? "veículo está" : "veículos estão"} sem coletor e ficaram fora do planejamento de ${date}. Veículos: ${truckDetails.map(t => t.licensePlate).join(", ")}`,
         severity: "critical",
         targetRoles: ["admin", "super_admin"],
         relatedData: {
@@ -753,7 +753,7 @@ export const generateSchedule = async (req, res) => {
         const { getIO } = await import("../socket/socketServer.js");
         const io = getIO();
         io.to("admins").emit("driverless-trucks-alert", {
-          message: `${driverlessTrucksList.length} truck(s) have no assigned driver and were excluded from scheduling`,
+          message: `${driverlessTrucksList.length} ${driverlessTrucksList.length === 1 ? "veículo está" : "veículos estão"} sem coletor e ficaram fora do planejamento`,
           trucks: truckDetails,
           scheduleId: mlSchedule._id,
           date,
@@ -768,8 +768,8 @@ export const generateSchedule = async (req, res) => {
     if (skippedAreas.length > 0) {
       await createSystemNotification({
         type: "schedule_failed",
-        title: "Areas Skipped Due to Resource Shortage",
-        message: `${skippedAreas.length} area(s) were skipped on ${date}: ${skippedAreas.map(d => `${d.area} (${d.skipReason})`).join("; ")}`,
+        title: "Áreas sem cobertura por falta de recursos",
+        message: `${skippedAreas.length} ${skippedAreas.length === 1 ? "área ficou" : "áreas ficaram"} sem cobertura em ${date}: ${skippedAreas.map(d => d.area).join(", ")}`,
         severity: "critical",
         targetRoles: ["super_admin"],
         relatedData: {
@@ -1342,8 +1342,8 @@ export const autoGenerateMLSchedule = async () => {
 
       await createSystemNotification({
         type: "driverless_truck",
-        title: "Trucks Without Drivers (Auto-Schedule)",
-        message: `${driverlessTrucksList.length} truck(s) have no assigned driver and were excluded from auto-schedule on ${dateStr}. Trucks: ${truckDetails.map(t => t.licensePlate).join(", ")}`,
+        title: "Veículos sem coletor no planejamento automático",
+        message: `${driverlessTrucksList.length} ${driverlessTrucksList.length === 1 ? "veículo está" : "veículos estão"} sem coletor e ficaram fora do planejamento de ${dateStr}. Veículos: ${truckDetails.map(t => t.licensePlate).join(", ")}`,
         severity: "critical",
         targetRoles: ["admin", "super_admin"],
         relatedData: {
@@ -1357,7 +1357,7 @@ export const autoGenerateMLSchedule = async () => {
         const { getIO } = await import("../socket/socketServer.js");
         const io = getIO();
         io.to("admins").emit("driverless-trucks-alert", {
-          message: `${driverlessTrucksList.length} truck(s) have no assigned driver and were excluded from today's auto-schedule`,
+          message: `${driverlessTrucksList.length} ${driverlessTrucksList.length === 1 ? "veículo está" : "veículos estão"} sem coletor e ficaram fora do planejamento de hoje`,
           trucks: truckDetails,
           scheduleId: mlSchedule._id,
           date: dateStr,
@@ -1372,8 +1372,8 @@ export const autoGenerateMLSchedule = async () => {
     if (skippedAreas.length > 0) {
       await createSystemNotification({
         type: "schedule_failed",
-        title: "Areas Skipped in Auto-Schedule",
-        message: `${skippedAreas.length} area(s) were skipped on ${dateStr}: ${skippedAreas.map(d => `${d.area} (${d.skipReason})`).join("; ")}`,
+        title: "Áreas sem cobertura no planejamento automático",
+        message: `${skippedAreas.length} ${skippedAreas.length === 1 ? "área ficou" : "áreas ficaram"} sem cobertura em ${dateStr}: ${skippedAreas.map(d => d.area).join(", ")}`,
         severity: "critical",
         targetRoles: ["super_admin"],
         relatedData: {

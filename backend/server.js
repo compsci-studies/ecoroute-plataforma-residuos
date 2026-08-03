@@ -6,7 +6,6 @@ import connectDB from "./config/db.js";
 import app from "./app.js";
 import { cleanupExpiredUploads } from "./controllers/upload.controller.js";
 import { autoDispatchQualifiedMLSchedule, autoGenerateMLSchedule } from "./domains/ml-schedules/controller.js";
-import { runBillGeneration } from "./controllers/billing.controller.js";
 import { ensurePickupRequestIndexes, expireStalePendingPickups } from "./services/pickupExpiry.js";
 import { ensurePaymentIndexes } from "./services/paymentIndexes.js";
 import { refreshPickupDailySummaries } from "./services/pickupAnalytics.js";
@@ -21,7 +20,6 @@ import {
 let cleanupCronScheduled = false;
 let mlScheduleCronScheduled = false;
 let mlAutoDispatchCronScheduled = false;
-let billingCronScheduled = false;
 let pickupExpiryCronScheduled = false;
 let pickupSummaryCronScheduled = false;
 
@@ -31,7 +29,6 @@ const CRON_SCHEDULE = "0 2 * * *";
 const PICKUP_EXPIRY_CRON = "*/1 * * * *";
 const PICKUP_SUMMARY_CRON = "*/15 * * * *";
 const ML_SCHEDULE_CRON = "0 0 * * *";
-const BILLING_CRON = "0 3 1 * *";
 const LOCAL_TIMEZONE = process.env.APP_TIMEZONE || "America/Sao_Paulo";
 
 async function initializeDatabase() {
@@ -111,14 +108,6 @@ function scheduleCronJobs() {
     }), { timezone: LOCAL_TIMEZONE });
   }
 
-  if (!billingCronScheduled) {
-    billingCronScheduled = true;
-    cron.schedule(BILLING_CRON, runObservedCron("billing-generation", async () => {
-      const result = await runBillGeneration();
-      logger.info("Billing generation completed", { message: result.message });
-      return result;
-    }));
-  }
 }
 
 export async function startServer() {

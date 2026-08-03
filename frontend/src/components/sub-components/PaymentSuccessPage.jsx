@@ -166,8 +166,8 @@ export default function PaymentSuccessPage() {
           </div>
 
           <p className="text-center text-xs text-primary/55 font-medium">
-            Uma copia deste comprovante fica disponível no histórico de coletas.
-            O coletor não devera receber dinheiro nesta retirada.
+            Uma cópia deste comprovante fica disponível no histórico de coletas.
+            O coletor não deverá receber dinheiro nesta retirada.
           </p>
 
           {/* Buttons */}

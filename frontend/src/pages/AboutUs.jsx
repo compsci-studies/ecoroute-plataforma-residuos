@@ -411,16 +411,16 @@ export default function AboutUs() {
         </div>
       </section>
 
-      {/* ── 8. Team image + text ── */}
+      {/* ── 8. Development process ── */}
       <section className="py-16 sm:py-24 px-6 md:px-16 lg:px-24">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <Reveal delay={100}>
             <div>
               <span className="text-primary/40 text-xs font-semibold tracking-widest uppercase">
-                Equipe
+                Desenvolvimento
               </span>
               <h2 className="font-bold text-primary text-3xl sm:text-4xl mt-3 mb-5 leading-tight">
-                Pessoas focadas em uma solução apresentável e funcional
+                Projeto orientado ao fluxo completo de coleta
               </h2>
               <p className="text-primary/70 text-lg leading-relaxed mb-4">
                 A proposta combina levantamento de pontos reais, fluxo de coleta,
@@ -436,7 +436,7 @@ export default function AboutUs() {
             <div className="relative rounded-2xl overflow-hidden shadow-xl">
               <img
                 src={IMAGES.team}
-                alt="Team collaboration"
+                alt="Planejamento do desenvolvimento da plataforma EcoRoute"
                 className="w-full h-[350px] lg:h-[420px] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />

@@ -61,12 +61,12 @@ export function Footer() {
           <div className="text-left">
             <h3 className="text-accent font-semibold text-base mb-4">Atualizações</h3>
             <p className="text-accent text-base mb-6 max-w-md">
-              Receba alertas de novos pontos, mudancas de rota e melhorias da plataforma.
+              Receba alertas de novos pontos, mudanças de rota e melhorias da plataforma.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-3">
               <input
                 type="email"
-                placeholder="Email"
+                placeholder="E-mail"
                 className="w-full sm:flex-1 bg-transparent border border-accent px-4 py-3 text-accent placeholder:text-accent/60 focus:outline-none focus:ring-2 focus:ring-accent"
               />
               <button

@@ -5,11 +5,9 @@ import nodemailer from "nodemailer";
 import test from "node:test";
 
 import { register, requestOTP } from "../controllers/auth.controller.js";
-import { payBill } from "../controllers/billing.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleMiddleware } from "../middlewares/role.middleware.js";
 import { sendOTPEmail } from "../services/emailService.js";
-import Billing from "../models/Billing.model.js";
 import User from "../models/User.model.js";
 
 const originals = new Map();
@@ -279,7 +277,7 @@ test("auth middleware rejects disabled users even with a valid token", async () 
   );
 
   assert.equal(nextError.statusCode, 403);
-  assert.equal(nextError.message, "User account is disabled");
+  assert.equal(nextError.message, "A conta do usuário está desativada");
 });
 
 test("role middleware fails closed for invalid route role configuration", () => {
@@ -300,43 +298,5 @@ test("role middleware rejects disabled users before role checks", () => {
   );
 
   assert.equal(nextError.statusCode, 403);
-  assert.equal(nextError.message, "User account is disabled");
-});
-
-test("billing cash payment marks the user's bill as pending admin confirmation", async () => {
-  const billingId = oid("64b000000000000000000201");
-  const userId = oid("64b000000000000000000202");
-  const bill = {
-    _id: billingId,
-    customerId: userId,
-    status: "UNPAID",
-    amount: 500,
-    saveCalls: 0,
-    async save() {
-      this.saveCalls += 1;
-      return this;
-    },
-  };
-
-  stub(Billing, "findOne", async (filter) => {
-    assert.equal(filter._id, billingId.toString());
-    assert.equal(filter.customerId, userId);
-    return bill;
-  });
-
-  const response = res();
-  await payBill(
-    {
-      params: { billingId: billingId.toString() },
-      body: { method: "cash" },
-      user: { _id: userId, role: "customer_admin", name: "Customer" },
-    },
-    response
-  );
-
-  assert.equal(response.statusCode, 200);
-  assert.equal(bill.status, "CASH_PENDING");
-  assert.equal(bill.paymentMethod, "cash");
-  assert.equal(bill.saveCalls, 1);
-  assert.equal(response.body.pendingConfirmation, true);
+  assert.equal(nextError.message, "A conta do usuário está desativada");
 });

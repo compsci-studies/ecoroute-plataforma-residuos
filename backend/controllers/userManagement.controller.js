@@ -125,7 +125,7 @@ export const updateUser = async (req, res) => {
     const { name, email, phone, role, isActive, address } = req.body;
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
 
     const accessError = assertCanManageUser(req, user, role);
     if (accessError) return res.status(accessError.status).json({ message: accessError.message });
@@ -183,7 +183,7 @@ export const getUserById = async (req, res) => {
       .populate("orgId", "name")
       .lean();
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
     if (isOrgAdmin(req) && (!req.user.orgId || user.orgId?._id?.toString() !== req.user.orgId.toString())) {
       return res.status(403).json({ message: "You can only view users in your organization" });
     }

@@ -6,18 +6,17 @@ export const roleMiddleware = (...allowedRoles) => {
 
   return (req, res, next) => {
     if (!req.user) {
-      return next(new AuthenticationError("Authentication required"));
+      return next(new AuthenticationError("Autenticação necessária"));
     }
 
     if (req.user.isActive === false) {
-      return next(new ForbiddenError("User account is disabled"));
+      return next(new ForbiddenError("A conta do usuário está desativada"));
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return next(new ForbiddenError("Access denied. Insufficient permissions"));
+      return next(new ForbiddenError("Acesso negado. Permissões insuficientes"));
     }
 
     next();
   };
 };
-

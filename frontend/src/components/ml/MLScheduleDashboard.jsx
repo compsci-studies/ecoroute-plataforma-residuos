@@ -44,14 +44,17 @@ const WASTE_LEGEND = [
   { label: "Crítico", dot: "bg-rose-500" },
 ];
 
-const formatDate = (date) =>
-  date
-    ? new Date(date).toLocaleDateString("pt-BR", {
+const formatDate = (date) => {
+  if (!date) return "Sem data";
+  const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(String(date))
+    ? new Date(`${date}T12:00:00`)
+    : new Date(date);
+  return parsedDate.toLocaleDateString("pt-BR", {
         month: "long",
         day: "numeric",
         year: "numeric",
-      })
-    : "Sem data";
+      });
+};
 
 const formatNumber = (value) =>
   Number(value || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -78,8 +81,8 @@ const Guide = () => {
     <section className="relative rounded-lg border border-primary/10 bg-white p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-primary">Guia da agenda inteligente</h2>
-          <p className="mt-1 text-sm text-primary/50">Use o botão de ajuda para entender cores, pontos e decisões da rota.</p>
+          <h2 className="text-sm font-semibold text-primary">Guia do planejamento de rotas</h2>
+          <p className="mt-1 text-sm text-primary/50">Entenda as prioridades sugeridas, a cobertura e as decisões de despacho.</p>
         </div>
         <button
           type="button"
@@ -96,7 +99,7 @@ const Guide = () => {
         <div className="absolute right-4 top-[calc(100%-0.5rem)] z-30 w-[min(42rem,calc(100vw-3rem))] rounded-lg border border-primary/12 bg-white p-4 shadow-2xl dark:bg-[var(--dash-card-soft)]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-primary">Como ler esta agenda</h3>
+              <h3 className="text-base font-semibold text-primary">Como ler este planejamento</h3>
               <p className="mt-1 text-sm leading-relaxed text-primary/55">
                 Cada card representa uma área de coleta. O ponto principal mostra o status do despacho, o nível indica o volume previsto e a ajuda do card explica a ação necessária.
               </p>
@@ -105,7 +108,7 @@ const Guide = () => {
               type="button"
               onClick={() => setOpen(false)}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-primary/45 transition hover:bg-primary/8 hover:text-primary"
-              aria-label="Fechar guia da agenda"
+              aria-label="Fechar guia do planejamento"
             >
               <X className="h-4 w-4" />
             </button>
@@ -201,6 +204,7 @@ const MLScheduleDashboard = () => {
   const totalAreas = summary.totalAreas || areas.length;
   const coveredAreas = (summary.dispatched || groupedAreas.dispatch.length) + (summary.reduced || groupedAreas.reduced.length);
   const coveragePercent = totalAreas ? Math.round((coveredAreas / totalAreas) * 100) : 0;
+  const attentionAreas = summary.skipped || groupedAreas.skip.length;
 
   const handleGenerate = async () => {
     clearError();
@@ -237,8 +241,8 @@ const MLScheduleDashboard = () => {
                 <BrainCircuit className="h-5 w-5" />
               </span>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-primary">Agenda inteligente de coletas</h1>
-                <p className="text-sm text-primary/55">Roteiros diários gerados por previsão de resíduos e disponibilidade da frota.</p>
+                <h1 className="text-2xl font-bold tracking-tight text-primary">Planejamento diário de rotas</h1>
+                <p className="text-sm text-primary/55">O sistema sugere a distribuição das coletas; o gestor revisa e confirma antes do despacho.</p>
               </div>
             </div>
 
@@ -264,14 +268,14 @@ const MLScheduleDashboard = () => {
               }`}
             >
               <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-rose-500"}`} />
-              {isOnline ? "IA online" : "Modo contingência"}
+              {isOnline ? "Otimização online" : "Modo de contingência"}
             </span>
 
             <button
               type="button"
               onClick={() => checkMLHealth()}
               className="grid h-9 w-9 place-items-center rounded-lg border border-primary/10 text-primary/60 transition hover:bg-primary/5 hover:text-primary"
-              aria-label="Atualizar saúde da IA"
+              aria-label="Atualizar motor de otimização"
             >
               <RefreshCcw className="h-4 w-4" />
             </button>
@@ -308,7 +312,7 @@ const MLScheduleDashboard = () => {
             <StatCard label="Resíduo previsto" value={`${formatNumber(displaySchedule.totalPredictedWasteKg)} kg`} detail={`${totalAreas} áreas de coleta`} />
             <StatCard label="Cobertura" value={`${coveragePercent}%`} detail={`${coveredAreas} de ${totalAreas} áreas atendidas`} tone={coveragePercent < 80 ? "text-amber-700" : "text-emerald-700"} />
             <StatCard label="Veículos atribuídos" value={summary.totalTrucksAssigned || 0} detail={`${summary.totalTrucksAvailable || 0} veículos disponíveis`} />
-            <StatCard label="Exige ação" value={(summary.skipped || groupedAreas.skip.length) + Number(summary.driverlessTrucks || 0)} detail={`${summary.driverlessTrucks || 0} veículos sem coletor`} tone="text-rose-700" />
+            <StatCard label="Exige ação" value={attentionAreas + Number(summary.driverlessTrucks || 0)} detail={`${summary.driverlessTrucks || 0} veículos sem coletor`} tone="text-rose-700" />
           </div>
 
           {(summary.skipped > 0 || summary.driverlessTrucks > 0) && (
@@ -316,8 +320,10 @@ const MLScheduleDashboard = () => {
               <div className="flex items-start gap-3">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                 <p className="text-sm text-amber-700">
-                  {summary.skipped || groupedAreas.skip.length} área(s) precisam de atenção.
-                  {summary.driverlessTrucks > 0 ? ` ${summary.driverlessTrucks} veículo(s) sem coletor atribuído.` : ""}
+                  {attentionAreas} {attentionAreas === 1 ? "área precisa" : "áreas precisam"} de atenção.
+                  {summary.driverlessTrucks > 0
+                    ? ` ${summary.driverlessTrucks} ${summary.driverlessTrucks === 1 ? "veículo está" : "veículos estão"} sem coletor atribuído.`
+                    : ""}
                 </p>
               </div>
             </div>
@@ -350,7 +356,7 @@ const MLScheduleDashboard = () => {
       {!displaySchedule && !loading && schedules.length > 0 && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
           <p className="text-sm text-emerald-700">
-            Última agenda: {formatDate(schedules[0].date)} / {schedules[0].areas?.length || 0} áreas /{" "}
+            Último planejamento: {formatDate(schedules[0].date)} / {schedules[0].areas?.length || 0} áreas /{" "}
             {formatNumber(schedules[0].totalPredictedWasteKg)} kg previstos.
           </p>
         </div>
@@ -361,8 +367,8 @@ const MLScheduleDashboard = () => {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-primary/8 text-primary/50">
             <BrainCircuit className="h-7 w-7" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-primary">Sem agenda para hoje</h3>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-primary/50">Gere uma agenda para criar cards simples de coleta.</p>
+          <h3 className="mt-4 text-lg font-semibold text-primary">Sem planejamento para hoje</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-primary/50">Gere uma proposta de distribuição para revisar áreas, frota e prioridades.</p>
         </section>
       )}
 
@@ -374,7 +380,7 @@ const MLScheduleDashboard = () => {
             className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.03]"
           >
             <div>
-              <h3 className="text-sm font-semibold text-primary">Gerador de agenda</h3>
+              <h3 className="text-sm font-semibold text-primary">Gerar planejamento</h3>
               <p className="mt-0.5 text-sm text-primary/50">Crie ou reprocesse um plano para qualquer data.</p>
             </div>
             <ChevronDown className={`h-5 w-5 text-primary/45 transition-transform ${showGenerator ? "rotate-180" : ""}`} />
@@ -400,7 +406,7 @@ const MLScheduleDashboard = () => {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {loading ? "Gerando..." : "Gerar agenda"}
+                  {loading ? "Gerando..." : "Gerar planejamento"}
                 </button>
 
                 {displaySchedule && (
@@ -419,7 +425,7 @@ const MLScheduleDashboard = () => {
 
               {!isOnline && (
                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                  O serviço de IA está offline; o backend usará a estratégia de contingência para gerar o plano.
+                  O motor de otimização está offline; o sistema usará a estratégia de contingência para gerar o plano.
                 </p>
               )}
 

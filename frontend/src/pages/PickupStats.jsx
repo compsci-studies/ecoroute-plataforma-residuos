@@ -91,7 +91,7 @@ const PickupStats = () => {
     { id: "areas", label: "Áreas" },
   ];
   const sections = isSuperAdmin
-    ? [...baseSections, { id: "organizations", label: "Cooperativas" }]
+    ? [...baseSections, { id: "organizations", label: "Operadores" }]
     : baseSections;
 
   // Chart colors
@@ -709,7 +709,7 @@ const PickupStats = () => {
             <>
               {/* Org Bar Chart */}
               <div className="bg-white rounded-2xl border border-primary/10 p-6">
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Coletas por cooperativa</h3>
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Coletas por operador</h3>
                 <div className="h-72">
                   <LazyChart
                     type="bar"
@@ -745,13 +745,13 @@ const PickupStats = () => {
               {/* Org Table */}
               <div className="bg-white rounded-2xl border border-primary/10 overflow-hidden">
                 <div className="px-5 py-4 border-b border-primary/10">
-                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Detalhamento por cooperativa</h3>
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Detalhamento por operador</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-primary/3">
-                        <th className="px-5 py-3 text-xs font-bold text-primary/60 uppercase tracking-wider">Cooperativa</th>
+                        <th className="px-5 py-3 text-xs font-bold text-primary/60 uppercase tracking-wider">Operador parceiro</th>
                         <th className="px-5 py-3 text-xs font-bold text-primary/60 uppercase tracking-wider text-center">Total</th>
                         <th className="px-5 py-3 text-xs font-bold text-primary/60 uppercase tracking-wider text-center">Concluídas</th>
                         <th className="px-5 py-3 text-xs font-bold text-primary/60 uppercase tracking-wider text-center">% conclusão</th>
@@ -783,8 +783,8 @@ const PickupStats = () => {
           ) : (
             <div className="text-center py-16 bg-white rounded-2xl border border-primary/10">
               <p className="text-4xl mb-3 opacity-40">&#x1F3E2;</p>
-              <h3 className="text-lg font-semibold text-primary/70 mb-1">Sem dados por cooperativa</h3>
-              <p className="text-sm text-primary/50">Os indicadores por cooperativa aparecerão conforme as coletas forem processadas.</p>
+              <h3 className="text-lg font-semibold text-primary/70 mb-1">Sem dados por operador</h3>
+              <p className="text-sm text-primary/50">Os indicadores por operador aparecerão conforme as coletas forem processadas.</p>
             </div>
           )}
         </>

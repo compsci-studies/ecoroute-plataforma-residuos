@@ -4,18 +4,18 @@ import {
   LogOut, Mail, Phone, Shield, MapPin, Truck, Building2,
   ChevronRight, Package, Calendar, Clock, CheckCircle,
   XCircle, ArrowLeft, Weight, User, History, Receipt,
-  CreditCard, Wallet, Ban,
+  CreditCard, Wallet,
 } from "lucide-react";
 import useAuthStore from "../stores/useAuthStore";
-import useBillingStore from "../stores/useBillingStore";
 import { getDashboardRoute } from "../utils/roleRouting";
 import api from "../utils/api";
 
 const ROLE_LABELS = {
   customer_admin: "Cliente",
   driver: "Coletor",
-  admin: "Administrador",
-  organization_admin: "Gestor de cooperativa",
+  admin: "Gestor da operação",
+  organization_admin: "Gestor da operação",
+  super_admin: "Administrador da plataforma",
 };
 
 const STATUS_LABELS = {
@@ -25,8 +25,9 @@ const STATUS_LABELS = {
   COMPLETED: "Concluída",
   CANCELLED: "Cancelada",
   PAYMENT_REQUIRED: "Pagamento pendente",
+  UNPAID: "Aguardando pagamento",
   PAID: "Pago",
-  OVERDUE: "Vencido",
+  FAILED: "Falhou",
 };
 
 const CATEGORY_LABELS = {
@@ -57,12 +58,6 @@ const formatDate = (value, options = { day: "2-digit", month: "short", year: "nu
   return new Date(value).toLocaleDateString("pt-BR", options);
 };
 
-const formatMonthYear = (year, month) =>
-  new Date(year, month - 1).toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
-
 export default function Profile() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -73,7 +68,6 @@ export default function Profile() {
 
   const isDriver = user?.role === "driver";
   const isCustomer = user?.role === "customer_admin";
-  const { history: billingHistory, fetchPaymentHistory } = useBillingStore();
 
   // Fetch driver profile with truck & org
   useEffect(() => {
@@ -88,15 +82,11 @@ export default function Profile() {
     })();
   }, [isDriver]);
 
-  // Fetch billing history for customers
-  useEffect(() => {
-    if (!isCustomer || activeTab !== "billing") return;
-    fetchPaymentHistory();
-  }, [isCustomer, activeTab, fetchPaymentHistory]);
-
   // Fetch pickup history for drivers and customers
   useEffect(() => {
-    if ((!isDriver && !isCustomer) || activeTab !== "history") return;
+    const needsPickupData =
+      activeTab === "history" || (isCustomer && activeTab === "billing");
+    if ((!isDriver && !isCustomer) || !needsPickupData) return;
     if (pickupHistory.length > 0) return;
     (async () => {
       setHistoryLoading(true);
@@ -141,6 +131,11 @@ export default function Profile() {
   const displayAddress = user.address || user.location?.address || null;
   const truck = driverProfile?.truck;
   const org = driverProfile?.organization;
+  const paymentPickups = pickupHistory.filter(
+    (pickup) =>
+      Number(pickup.estimatedPrice || 0) > 0 &&
+      !["CANCELLED", "REJECTED", "EXPIRED"].includes(pickup.status),
+  );
 
   const tabs = isDriver
     ? [
@@ -255,7 +250,7 @@ export default function Profile() {
                       <Building2 size={18} className="text-teal-600" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-primary/40 uppercase tracking-wider font-medium">Organização</p>
+                      <p className="text-[10px] text-primary/40 uppercase tracking-wider font-medium">Operador parceiro</p>
                       <p className="text-base font-bold text-primary">{org.name}</p>
                     </div>
                   </div>
@@ -293,43 +288,48 @@ export default function Profile() {
         {/* BILLING TAB (customers only) */}
         {isCustomer && activeTab === "billing" && (
           <div className="space-y-4">
-            {billingHistory.length > 0 ? (
-              billingHistory.map((bill) => {
-                const isPaid = bill.status === "PAID";
+            {historyLoading ? (
+              <div className="py-12 text-center text-sm font-semibold text-primary/50">
+                Carregando pagamentos...
+              </div>
+            ) : paymentPickups.length > 0 ? (
+              paymentPickups.map((pickup) => {
+                const isPaid = pickup.paymentStatus === "PAID";
+                const pickupId = pickup.id || pickup._id;
                 return (
-                  <div key={bill._id} className="bg-white rounded-2xl shadow-sm border border-primary/8 p-4">
+                  <div key={pickupId} className="bg-white rounded-2xl shadow-sm border border-primary/8 p-4">
                     <div className="flex items-start gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isPaid ? "bg-emerald-50" : "bg-violet-50"
+                        isPaid ? "bg-emerald-50" : "bg-amber-50"
                       }`}>
                         {isPaid ? <CheckCircle size={18} className="text-emerald-600" /> :
-                         <Ban size={18} className="text-violet-500" />}
+                         <Clock size={18} className="text-amber-600" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-semibold text-primary">
-                            {formatMonthYear(bill.billingYear, bill.billingMonth)}
+                            Coleta ECO-{String(pickupId).slice(-8).toUpperCase()}
                           </p>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            isPaid ? "bg-emerald-100 text-emerald-700" : "bg-violet-100 text-violet-700"
+                            isPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
                           }`}>
-                            {STATUS_LABELS[bill.status] || bill.status}
+                            {STATUS_LABELS[pickup.paymentStatus] || pickup.paymentStatus || "Aguardando pagamento"}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-primary/45">
                           <span className="flex items-center gap-1 font-semibold text-primary/70">
-                            {formatCurrency(bill.amount)}
+                            {formatCurrency(pickup.estimatedPrice)}
                           </span>
-                          {bill.paidAt && (
+                          {(pickup.completedAt || pickup.createdAt) && (
                             <span className="flex items-center gap-1">
                               <Calendar size={11} />
-                              {formatDate(bill.paidAt)}
+                              {formatDate(pickup.completedAt || pickup.createdAt)}
                             </span>
                           )}
-                          {bill.paymentMethod && (
+                          {pickup.paymentMethod && (
                             <span className="flex items-center gap-1">
-                              {bill.paymentMethod === "pix" ? <CreditCard size={11} /> : <Wallet size={11} />}
-                              {PAYMENT_METHOD_LABELS[bill.paymentMethod] || bill.paymentMethod}
+                              {pickup.paymentMethod === "pix" ? <CreditCard size={11} /> : <Wallet size={11} />}
+                              {PAYMENT_METHOD_LABELS[pickup.paymentMethod] || pickup.paymentMethod}
                             </span>
                           )}
                         </div>
@@ -345,7 +345,7 @@ export default function Profile() {
                 </div>
                 <h3 className="text-base font-semibold text-primary/70 mb-1">Nenhum pagamento registrado</h3>
                 <p className="text-sm text-primary/40 max-w-xs mx-auto">
-                  Seus comprovantes aparecem aqui depois da primeira cobrança da EcoRoute.
+                  Os pagamentos aparecem aqui quando uma coleta recebe valor e forma de pagamento.
                 </p>
               </div>
             )}
@@ -402,7 +402,7 @@ export default function Profile() {
                   <Truck size={28} className="text-blue-400" />
                 </div>
                 <h3 className="text-base font-semibold text-primary/70 mb-1">Nenhum veículo atribuído</h3>
-                <p className="text-sm text-primary/40">Fale com o administrador para vincular um veículo.</p>
+                <p className="text-sm text-primary/40">Fale com o gestor da operação para vincular um veículo.</p>
               </div>
             )}
           </div>

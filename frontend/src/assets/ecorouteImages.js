@@ -8,7 +8,6 @@ import ecopontoDropoff from './ecoroute/ecoponto-dropoff.webp';
 import residentialPickup from './ecoroute/residential-pickup.webp';
 import supportOperations from './ecoroute/support-operations.webp';
 import teamPlanning from './ecoroute/team-planning.webp';
-import teamPortrait from './ecoroute/team-portrait.webp';
 
 export const ecorouteImages = Object.freeze({
   appPhonePickup,
@@ -21,5 +20,4 @@ export const ecorouteImages = Object.freeze({
   residentialPickup,
   supportOperations,
   teamPlanning,
-  teamPortrait,
 });

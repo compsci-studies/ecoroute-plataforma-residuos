@@ -82,7 +82,7 @@ const OrganizationBankManagement = () => {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-            Dados bancários das cooperativas
+            Dados bancários dos operadores
           </h1>
           <p className="mt-1 text-sm text-primary/60">
             Vincule dados bancários para preparar repasses diretos às operações parceiras.
@@ -97,7 +97,7 @@ const OrganizationBankManagement = () => {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard
           icon={<Building2 className="h-5 w-5 text-primary" />}
-          label="Cooperativas"
+          label="Operadores"
           value={totalOrganizations}
         />
         <SummaryCard
@@ -117,7 +117,7 @@ const OrganizationBankManagement = () => {
       <section className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm shadow-primary/5">
         <div className="flex flex-col gap-3 border-b border-[var(--dash-border)] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-bold text-primary">Cooperativas</h2>
+            <h2 className="text-base font-bold text-primary">Operadores parceiros</h2>
             <p className="mt-0.5 text-xs font-medium text-primary/45">
               As vinculações bancárias ficam salvas neste navegador.
             </p>
@@ -127,14 +127,14 @@ const OrganizationBankManagement = () => {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar cooperativa"
+              placeholder="Buscar operador"
               className="min-w-0 flex-1 bg-transparent text-primary outline-none placeholder:text-primary/35"
             />
           </label>
         </div>
 
         {isLoading ? (
-          <div className="p-6 text-sm font-medium text-primary/55">Carregando cooperativas...</div>
+          <div className="p-6 text-sm font-medium text-primary/55">Carregando operadores...</div>
         ) : error ? (
           <div className="p-6">
             <AdminErrorState
@@ -146,8 +146,8 @@ const OrganizationBankManagement = () => {
           <div className="p-6">
             <AdminEmptyState
               icon={Building2}
-              title="Nenhuma cooperativa encontrada"
-              message="Cooperativas cadastradas no sistema aparecerão aqui."
+              title="Nenhum operador encontrado"
+              message="Cooperativas e empresas prestadoras cadastradas aparecerão aqui."
             />
           </div>
         ) : (
@@ -156,7 +156,7 @@ const OrganizationBankManagement = () => {
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="bg-[var(--dash-card-soft)] text-xs font-bold uppercase tracking-wide text-primary/45">
                   <tr>
-                    <th className="px-5 py-3">Cooperativa</th>
+                    <th className="px-5 py-3">Operador parceiro</th>
                     <th className="px-5 py-3">Status bancário</th>
                     <th className="px-5 py-3">Banco</th>
                     <th className="px-5 py-3 text-right">Ação</th>
@@ -220,7 +220,7 @@ const OrganizationBankManagement = () => {
                 <PaginationControls
                   pagination={pagination}
                   onPageChange={(nextPage) => fetchOrganizations({ page: nextPage, limit: 10 })}
-                  itemLabel="cooperativas"
+                  itemLabel="operadores"
                 />
               </div>
             )}

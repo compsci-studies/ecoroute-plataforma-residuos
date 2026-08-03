@@ -33,7 +33,7 @@ const useUserStore = create((set, get) => ({
       if (isAbortError(err)) return;
       set({
         isLoading: false,
-        error: err.response?.data?.message || "Failed to fetch users",
+        error: err.response?.data?.message || "Não foi possível carregar os usuários",
       });
     }
   },
@@ -66,7 +66,7 @@ const useUserStore = create((set, get) => ({
       if (previousUsers) set({ users: previousUsers });
       return {
         success: false,
-        error: err.response?.data?.message || "Failed to update user",
+        error: err.response?.data?.message || "Não foi possível atualizar o usuário",
       };
     }
   },

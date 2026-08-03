@@ -1,448 +1,468 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Receipt,
-  CreditCard,
-  CheckCircle2,
   AlertTriangle,
-  Clock,
   ArrowLeft,
-  Wallet,
-  Calendar,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Clock3,
   History,
-  Ban,
-  DollarSign,
+  MapPin,
+  QrCode,
+  Receipt,
+  Wallet,
 } from "lucide-react";
-import useBillingStore from "../../stores/useBillingStore";
-import useAuthStore from "../../stores/useAuthStore";
+import api from "../../utils/api";
+import usePaymentStore from "../../stores/usePaymentStore";
 import { ecorouteImages } from "../../assets/ecorouteImages";
 import { themeColor } from "../../utils/themeColors";
 
 const DASHBOARD_BG = ecorouteImages.supportOperations;
 
-const STATUS_CONFIG = {
-  UNPAID: { color: themeColor("warning"), bg: "bg-amber-500/15", border: "border-amber-500/30", label: "Aberta", icon: Clock },
-  CASH_PENDING: { color: themeColor("info"), bg: "bg-blue-500/15", border: "border-blue-500/30", label: "Dinheiro pendente", icon: Wallet },
-  OVERDUE: { color: themeColor("danger"), bg: "bg-red-500/15", border: "border-red-500/30", label: "Vencida", icon: AlertTriangle },
-  PAID: { color: themeColor("successStrong"), bg: "bg-emerald-500/15", border: "border-emerald-500/30", label: "Paga", icon: CheckCircle2 },
-  WAIVED: { color: themeColor("violet"), bg: "bg-violet-500/15", border: "border-violet-500/30", label: "Isenta", icon: Ban },
+const PAYMENT_STATUS = {
+  UNPAID: {
+    label: "Forma de pagamento pendente",
+    color: themeColor("warning"),
+    className: "border-amber-500/30 bg-amber-500/15",
+    Icon: Clock3,
+  },
+  PENDING: {
+    label: "Confirmação pendente",
+    color: themeColor("info"),
+    className: "border-blue-500/30 bg-blue-500/15",
+    Icon: Wallet,
+  },
+  FAILED: {
+    label: "Pagamento não concluído",
+    color: themeColor("danger"),
+    className: "border-red-500/30 bg-red-500/15",
+    Icon: AlertTriangle,
+  },
+  PAID: {
+    label: "Pago",
+    color: themeColor("successStrong"),
+    className: "border-emerald-500/30 bg-emerald-500/15",
+    Icon: CheckCircle2,
+  },
 };
 
-function formatPeriod(month, year) {
-  const d = new Date(year, month - 1);
-  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+const CATEGORY_LABELS = {
+  recyclable: "Recicláveis",
+  "non-recyclable": "Não recicláveis",
+  nonRecyclable: "Não recicláveis",
+  mixed: "Resíduos mistos",
+  both: "Resíduos mistos",
+  electronic: "Eletrônicos",
+  bulky: "Volumosos",
+};
+
+const PAYMENT_METHOD_LABELS = {
+  pix: "Pix",
+  cash: "Dinheiro",
+};
+
+function formatCurrency(value, currency = "BRL") {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: currency || "BRL",
+  }).format(Number(value || 0));
+}
+
+function formatDate(value) {
+  if (!value) return "Data não informada";
+  return new Date(value).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getPickupId(pickup) {
+  return pickup.id || pickup._id;
+}
+
+function getProtocol(pickup) {
+  const id = String(getPickupId(pickup) || "");
+  return id ? `ECO-${id.slice(-8).toUpperCase()}` : "ECO-PENDENTE";
+}
+
+function getPaymentState(pickup) {
+  if (["CANCELLED", "REJECTED", "EXPIRED"].includes(pickup.status)) return null;
+  if (PAYMENT_STATUS[pickup.paymentStatus]) return pickup.paymentStatus;
+  if (pickup.status === "PAYMENT_REQUIRED" || !pickup.paymentMethod) return "UNPAID";
+  return "PENDING";
 }
 
 function BillingPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useAuthStore();
-  const { bills, summary, loading, error, fetchMyBills, payBill } = useBillingStore();
-  const [activeTab, setActiveTab] = useState("bills"); // "bills" | "history"
-  const [payingId, setPayingId] = useState(null);
-  const [payMethod, setPayMethod] = useState(null);
-  const [paymentNotice, setPaymentNotice] = useState(null);
+  const { initiatePayment } = usePaymentStore();
+  const [pickups, setPickups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("open");
+  const [paying, setPaying] = useState({ pickupId: null, method: null });
+  const [notice, setNotice] = useState(null);
+
+  const fetchPickups = useCallback(async ({ signal, showLoader = false } = {}) => {
+    if (showLoader) setLoading(true);
+    try {
+      const response = await api.get("/pickups/my-pickups", { signal });
+      setPickups(response.data.pickups || []);
+      setError(null);
+    } catch (requestError) {
+      if (requestError.name !== "CanceledError") {
+        setError(
+          requestError.response?.data?.message ||
+            "Não foi possível carregar os pagamentos das coletas.",
+        );
+      }
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchMyBills({ signal: controller.signal });
+    fetchPickups({ signal: controller.signal, showLoader: true });
     return () => controller.abort();
-  }, [fetchMyBills]);
+  }, [fetchPickups]);
 
   useEffect(() => {
-    const refetch = () => fetchMyBills();
+    const refetch = () => fetchPickups();
     const onVisible = () => {
       if (document.visibilityState === "visible") refetch();
     };
     window.addEventListener("focus", refetch);
     document.addEventListener("visibilitychange", onVisible);
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") refetch();
-    }, 60000);
     return () => {
       window.removeEventListener("focus", refetch);
       document.removeEventListener("visibilitychange", onVisible);
-      clearInterval(interval);
     };
-  }, [fetchMyBills]);
+  }, [fetchPickups]);
 
-  // Handle Pix redirect query params
-  useEffect(() => {
-    const payment = searchParams.get("payment");
-    if (payment === "success") {
-      queueMicrotask(() => {
-        setPaymentNotice({ type: "success", message: "Pagamento Pix confirmado. A cobrança foi marcada como paga." });
-        setActiveTab("history");
-      });
-      fetchMyBills();
-      // Clean up URL params
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete("payment");
-      nextParams.delete("billingId");
-      setSearchParams(nextParams, { replace: true });
-    } else if (payment === "failed") {
-      const reason = searchParams.get("reason");
-      queueMicrotask(() => {
-        setPaymentNotice({ type: "error", message: `Pagamento Pix falhou${reason ? ` (${reason.replace(/_/g, " ")})` : ""}. Tente novamente.` });
-      });
-      fetchMyBills();
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete("payment");
-      nextParams.delete("reason");
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [fetchMyBills, searchParams, setSearchParams]);
+  const paymentPickups = useMemo(
+    () =>
+      pickups
+        .map((pickup) => ({ ...pickup, paymentState: getPaymentState(pickup) }))
+        .filter(
+          (pickup) =>
+            pickup.paymentState && Number(pickup.estimatedPrice || 0) > 0,
+        ),
+    [pickups],
+  );
 
-  const handlePay = async (billingId, method) => {
-    setPayingId(billingId);
-    setPayMethod(method);
-    const result = await payBill(billingId, method);
-    // For Pix, browser will redirect — don't clear state
+  const openPayments = useMemo(
+    () => paymentPickups.filter((pickup) => pickup.paymentState !== "PAID"),
+    [paymentPickups],
+  );
+  const paidPayments = useMemo(
+    () => paymentPickups.filter((pickup) => pickup.paymentState === "PAID"),
+    [paymentPickups],
+  );
+  const outstandingValue = useMemo(
+    () =>
+      openPayments.reduce(
+        (total, pickup) => total + Number(pickup.estimatedPrice || 0),
+        0,
+      ),
+    [openPayments],
+  );
+
+  const handlePay = async (pickup, method) => {
+    const pickupId = getPickupId(pickup);
+    setPaying({ pickupId, method });
+    setNotice(null);
+    const result = await initiatePayment({ pickupId, method });
     if (result.redirecting) return;
-    setPayingId(null);
-    setPayMethod(null);
+
+    setPaying({ pickupId: null, method: null });
     if (!result.success) {
-      alert(result.error || "Pagamento falhou");
+      setNotice({
+        type: "error",
+        message: result.error || "Não foi possível iniciar o pagamento.",
+      });
+      return;
     }
+
+    const paidInDemo = method === "pix" && result.payment?.status === "COMPLETED";
+    setPickups((current) =>
+      current.map((item) =>
+        getPickupId(item) === pickupId
+          ? {
+              ...item,
+              paymentMethod: method,
+              paymentStatus: paidInDemo ? "PAID" : "PENDING",
+            }
+          : item,
+      ),
+    );
+    setNotice({
+      type: "success",
+      message:
+        method === "cash"
+          ? "Pagamento em dinheiro escolhido. O coletor confirmará o recebimento durante a coleta."
+          : "Pagamento Pix registrado para esta coleta.",
+    });
   };
 
-  const unpaidBills = useMemo(
-    () => bills.filter((b) => ["UNPAID", "OVERDUE", "CASH_PENDING"].includes(b.status)),
-    [bills]
-  );
-  const paidBills = useMemo(
-    () => bills.filter((b) => b.status === "PAID" || b.status === "WAIVED"),
-    [bills]
-  );
-  const derivedSummary = useMemo(() => {
-    if (!summary && bills.length === 0) return null;
-    const fallbackTotalDue = unpaidBills.reduce(
-      (total, bill) => total + Number(bill.amount || 0),
-      0
-    );
-    return {
-      total: summary?.total ?? bills.length,
-      paid: summary?.paid ?? paidBills.length,
-      unpaid: summary?.unpaid ?? unpaidBills.length,
-      totalDue: summary?.totalDue ?? fallbackTotalDue,
-    };
-  }, [bills, paidBills.length, summary, unpaidBills]);
-
   return (
-    <div className="relative min-h-screen font-['Outfit',sans-serif] bg-black">
+    <div className="relative min-h-screen bg-black font-['Outfit',sans-serif]">
       <div
         className="fixed inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${DASHBOARD_BG})` }}
       />
-      <div className="fixed inset-0 z-0 bg-black/90 backdrop-blur-xs" />
+      <div className="fixed inset-0 z-0 bg-black/90" />
 
-      <div className="relative z-10 pt-24 pb-20">
-        {/* Header */}
-        <section className="pb-6 px-6 md:px-16 lg:px-24">
+      <main className="relative z-10 px-5 pb-20 pt-24 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-6xl">
           <button
-            onClick={() => navigate(user?.role === "admin" ? "/admin-dashboard" : "/customer-dashboard")}
-            className="flex items-center gap-2 text-white/50 hover:text-white mb-6 transition text-sm"
+            type="button"
+            onClick={() => navigate("/customer-dashboard")}
+            className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-white/55 transition hover:text-white"
           >
             <ArrowLeft size={16} /> Voltar ao painel
           </button>
 
-          <div className="max-w-4xl mx-auto text-center">
-            <span className="inline-block text-white/50 text-xs font-semibold tracking-widest uppercase mb-3">
-              Cobranças
+          <header className="mb-8 max-w-3xl">
+            <span className="mb-3 block text-xs font-semibold uppercase tracking-widest text-white/45">
+              Conta do cliente
             </span>
-            <h1 className="font-bold text-white text-3xl sm:text-4xl tracking-tight mb-3">
-              Cobranças mensais
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Pagamentos por coleta
             </h1>
-            <p className="text-white/50 text-base max-w-xl mx-auto">
-              Acompanhe pagamentos, vencimentos e histórico financeiro das coletas.
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/55">
+              Cada valor corresponde a uma solicitação específica. Clientes pagam o
+              serviço de retirada; gestores e coletores não recebem mensalidades do
+              sistema.
             </p>
-          </div>
-        </section>
+          </header>
 
-        {/* Summary Cards */}
-        {derivedSummary && (
-          <section className="pb-6 px-6 md:px-16 lg:px-24">
-            <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SummaryCard
-                icon={Receipt}
-                label="Total"
-                value={derivedSummary.total}
-                accent={themeColor("info")}
-              />
-              <SummaryCard
-                icon={CheckCircle2}
-                label="Pagas"
-                value={derivedSummary.paid}
-                accent={themeColor("successStrong")}
-              />
-              <SummaryCard
-                icon={Clock}
-                label="Abertas"
-                value={derivedSummary.unpaid}
-                accent={themeColor("warning")}
-              />
-              <SummaryCard
-                icon={DollarSign}
-                label="Valor devido"
-                value={`R$ ${(derivedSummary.totalDue || 0).toLocaleString()}`}
-                accent={themeColor("danger")}
-              />
-            </div>
+          <section className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <SummaryCard
+              icon={Receipt}
+              label="Coletas com valor"
+              value={paymentPickups.length}
+              accent={themeColor("info")}
+            />
+            <SummaryCard
+              icon={CheckCircle2}
+              label="Pagamentos concluídos"
+              value={paidPayments.length}
+              accent={themeColor("successStrong")}
+            />
+            <SummaryCard
+              icon={Clock3}
+              label="Em aberto"
+              value={openPayments.length}
+              accent={themeColor("warning")}
+            />
+            <SummaryCard
+              icon={CircleDollarSign}
+              label="Valor em aberto"
+              value={formatCurrency(outstandingValue)}
+              accent={themeColor("danger")}
+            />
           </section>
-        )}
 
-        {/* Payment Notice */}
-        {paymentNotice && (
-          <section className="pb-4 px-6 md:px-16 lg:px-24">
-            <div className="max-w-4xl mx-auto">
-              <div
-                className={`flex items-center justify-between gap-3 rounded-2xl border px-5 py-4 ${
-                  paymentNotice.type === "success"
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                    : "bg-red-500/10 border-red-500/30 text-red-300"
+          {notice && (
+            <div
+              className={`mb-6 flex items-start justify-between gap-4 rounded-lg border px-4 py-3 text-sm font-semibold ${
+                notice.type === "success"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                  : "border-red-500/30 bg-red-500/10 text-red-200"
+              }`}
+            >
+              <span>{notice.message}</span>
+              <button
+                type="button"
+                aria-label="Fechar aviso"
+                onClick={() => setNotice(null)}
+                className="text-lg leading-none text-white/50 hover:text-white"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+
+          <div className="mb-6 inline-flex w-full rounded-lg border border-white/10 bg-white/5 p-1 sm:w-auto">
+            {[
+              { key: "open", label: "Em aberto", Icon: Wallet },
+              { key: "history", label: "Histórico", Icon: History },
+            ].map((tab) => (
+              <button
+                type="button"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold transition sm:flex-none ${
+                  activeTab === tab.key
+                    ? "bg-white/15 text-white"
+                    : "text-white/45 hover:text-white/75"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {paymentNotice.type === "success" ? (
-                    <CheckCircle2 size={20} />
-                  ) : (
-                    <AlertTriangle size={20} />
-                  )}
-                  <p className="text-sm font-semibold">{paymentNotice.message}</p>
-                </div>
-                <button
-                  onClick={() => setPaymentNotice(null)}
-                  className="text-white/40 hover:text-white transition text-lg leading-none"
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
+                <tab.Icon size={16} /> {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Tabs */}
-        <section className="px-6 md:px-16 lg:px-24">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex gap-1 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 mb-6">
-              {[
-                { key: "bills", label: "Cobranças abertas", Icon: Wallet },
-                { key: "history", label: "Histórico de pagamentos", Icon: History },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === tab.key
-                      ? "bg-white/15 text-white"
-                      : "text-white/40 hover:text-white/60"
-                  }`}
-                >
-                  <tab.Icon size={16} />
-                  {tab.label}
-                </button>
+          {loading ? (
+            <div className="flex min-h-64 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          ) : error ? (
+            <EmptyState
+              icon={AlertTriangle}
+              title="Não foi possível carregar os pagamentos"
+              message={error}
+            />
+          ) : activeTab === "open" ? (
+            openPayments.length ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {openPayments.map((pickup) => (
+                  <PaymentCard
+                    key={getPickupId(pickup)}
+                    pickup={pickup}
+                    paying={paying}
+                    onPay={handlePay}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={CheckCircle2}
+                title="Nenhum pagamento em aberto"
+                message="Quando uma coleta tiver valor pendente, ela aparecerá aqui com as opções Pix e dinheiro."
+              />
+            )
+          ) : paidPayments.length ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {paidPayments.map((pickup) => (
+                <PaymentCard key={getPickupId(pickup)} pickup={pickup} compact />
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* Content */}
-        <section className="px-6 md:px-16 lg:px-24">
-          <div className="max-w-4xl mx-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              </div>
-            ) : error ? (
-              <div className="text-center py-16">
-                <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-                <p className="text-red-300">{error}</p>
-              </div>
-            ) : activeTab === "bills" ? (
-              /* ── Current Bills ── */
-              unpaidBills.length > 0 ? (
-                <div className="space-y-4">
-                  {unpaidBills.map((bill) => (
-                    <BillCard
-                      key={bill._id}
-                      bill={bill}
-                      onPay={handlePay}
-                      payingId={payingId}
-                      payMethod={payMethod}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={CheckCircle2}
-                  title={bills.length === 0 ? "Nenhuma cobrança emitida" : "Tudo em dia"}
-                  message={
-                    bills.length === 0
-                      ? "As cobranças mensais aparecem aqui quando forem geradas pela gestão financeira."
-                      : "Não há cobranças pendentes para esta conta."
-                  }
-                />
-              )
-            ) : (
-              /* ── Payment History ── */
-              paidBills.length > 0 ? (
-                <div className="space-y-3">
-                  {paidBills.map((bill) => (
-                    <HistoryRow key={bill._id} bill={bill} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={History}
-                  title="Sem histórico de pagamentos"
-                  message="Os comprovantes aparecem aqui depois do primeiro pagamento."
-                />
-              )
-            )}
-          </div>
-        </section>
-      </div>
+          ) : (
+            <EmptyState
+              icon={History}
+              title="Ainda não há pagamentos concluídos"
+              message="O histórico será formado pelos pagamentos das coletas realizadas nesta conta."
+            />
+          )}
+        </div>
+      </main>
     </div>
   );
 }
 
-function SummaryCard({ icon, label, value, accent }) {
-  const IconComponent = icon;
-
+function SummaryCard({ icon: Icon, label, value, accent }) {
   return (
-    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-all">
+    <div className="rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-md">
       <div
-        className="w-9 h-9 rounded-xl mx-auto mb-2 flex items-center justify-center"
+        className="mb-3 flex h-9 w-9 items-center justify-center rounded-md"
         style={{ backgroundColor: `${accent}20` }}
       >
-        <IconComponent size={18} style={{ color: accent }} />
+        <Icon size={18} style={{ color: accent }} />
       </div>
       <p className="text-xl font-bold text-white">{value}</p>
-      <p className="text-white/40 text-xs mt-0.5">{label}</p>
+      <p className="mt-1 text-xs font-medium text-white/45">{label}</p>
     </div>
   );
 }
 
-function BillCard({ bill, onPay, payingId, payMethod }) {
-  const config = STATUS_CONFIG[bill.status] || STATUS_CONFIG.UNPAID;
-  const isPaying = payingId === bill._id;
+function PaymentCard({ pickup, paying = {}, onPay, compact = false }) {
+  const config = PAYMENT_STATUS[pickup.paymentState] || PAYMENT_STATUS.UNPAID;
+  const pickupId = getPickupId(pickup);
+  const isPaying = paying.pickupId === pickupId;
+  const canChoosePayment = ["UNPAID", "FAILED"].includes(pickup.paymentState);
+  const pendingMessage =
+    pickup.paymentMethod === "cash"
+      ? "Dinheiro escolhido. O coletor confirma o recebimento durante a retirada."
+      : "Pix iniciado. A confirmação ocorre automaticamente pelo PagSeguro.";
 
   return (
-    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 hover:border-white/20 transition-all">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <p className="text-white font-semibold text-lg">
-            {formatPeriod(bill.billingMonth, bill.billingYear)}
+    <article className="rounded-lg border border-white/10 bg-white/5 p-5 backdrop-blur-md transition hover:border-white/20">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+            {getProtocol(pickup)}
           </p>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-white/40 text-sm flex items-center gap-1">
-              <Calendar size={13} />
-              Vencimento: {new Date(bill.dueDate).toLocaleDateString("pt-BR", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </span>
-          </div>
+          <h2 className="mt-1 text-lg font-semibold text-white">
+            {CATEGORY_LABELS[pickup.category] || "Serviço de coleta"}
+          </h2>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-white">
-            R$ {bill.amount.toLocaleString()}
-          </p>
-          <span
-            className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${config.bg} ${config.border}`}
-            style={{ color: config.color }}
-          >
-            <config.icon size={12} />
-            {config.label}
-          </span>
-        </div>
-      </div>
-
-      {/* Pay Buttons */}
-      {(bill.status === "UNPAID" || bill.status === "OVERDUE") && (
-        <div className="flex gap-3 pt-3 border-t border-white/10">
-          <button
-            onClick={() => onPay(bill._id, "pix")}
-            disabled={isPaying}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <CreditCard size={16} />
-            {isPaying && payMethod === "pix" ? "Processando..." : "Pagar com Pix"}
-          </button>
-          <button
-            onClick={() => onPay(bill._id, "cash")}
-            disabled={isPaying}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Wallet size={16} />
-            {isPaying && payMethod === "cash" ? "Processando..." : "Pagar em dinheiro"}
-          </button>
-        </div>
-      )}
-      {bill.status === "CASH_PENDING" && (
-        <div className="pt-3 border-t border-white/10">
-          <p className="rounded-xl border border-blue-500/25 bg-blue-500/10 px-4 py-3 text-sm font-semibold text-blue-200">
-            Pagamento em dinheiro registrado. Aguardando confirmação da administração.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HistoryRow({ bill }) {
-  const config = STATUS_CONFIG[bill.status] || STATUS_CONFIG.PAID;
-  return (
-    <div className="flex items-center justify-between gap-4 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl px-5 py-4 hover:bg-white/10 transition-all">
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: `${config.color}20` }}
-        >
-          <config.icon size={18} style={{ color: config.color }} />
-        </div>
-        <div>
-          <p className="text-white font-semibold text-sm">
-            {formatPeriod(bill.billingMonth, bill.billingYear)}
-          </p>
-          <p className="text-white/40 text-xs mt-0.5">
-            {bill.paidAt
-              ? `Pago em ${new Date(bill.paidAt).toLocaleDateString("pt-BR", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}`
-              : bill.status === "WAIVED"
-              ? "Isentado pela administração"
-              : ""}
-            {bill.paymentMethod && ` via ${bill.paymentMethod === "cash" ? "dinheiro" : bill.paymentMethod}`}
-          </p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="text-white font-bold">R$ {bill.amount.toLocaleString()}</p>
         <span
-          className="text-xs font-semibold"
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${config.className}`}
           style={{ color: config.color }}
         >
-          {config.label}
+          <config.Icon size={13} /> {config.label}
         </span>
       </div>
-    </div>
+
+      <div className="mt-4 space-y-2 text-sm text-white/55">
+        <p className="flex items-start gap-2">
+          <MapPin size={15} className="mt-0.5 shrink-0" />
+          <span>{pickup.location?.address || pickup.area || "Endereço não informado"}</span>
+        </p>
+        <p className="flex items-center gap-2">
+          <CalendarDays size={15} />
+          {formatDate(pickup.completedAt || pickup.createdAt)}
+        </p>
+        {pickup.paymentMethod && (
+          <p className="flex items-center gap-2">
+            {pickup.paymentMethod === "pix" ? <QrCode size={15} /> : <Wallet size={15} />}
+            {PAYMENT_METHOD_LABELS[pickup.paymentMethod] || pickup.paymentMethod}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-5 flex items-end justify-between gap-4 border-t border-white/10 pt-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/35">
+            Valor da coleta
+          </p>
+          <p className="mt-1 text-2xl font-bold text-white">
+            {formatCurrency(pickup.estimatedPrice, pickup.currency)}
+          </p>
+        </div>
+      </div>
+
+      {!compact && canChoosePayment && onPay && (
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={isPaying}
+            onClick={() => onPay(pickup, "pix")}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <QrCode size={17} />
+            {isPaying && paying.method === "pix" ? "Processando..." : "Pagar com Pix"}
+          </button>
+          <button
+            type="button"
+            disabled={isPaying}
+            onClick={() => onPay(pickup, "cash")}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Wallet size={17} />
+            {isPaying && paying.method === "cash" ? "Processando..." : "Pagar na coleta"}
+          </button>
+        </div>
+      )}
+
+      {!compact && pickup.paymentState === "PENDING" && (
+        <p className="mt-4 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2.5 text-xs font-semibold leading-relaxed text-blue-200">
+          {pendingMessage}
+        </p>
+      )}
+    </article>
   );
 }
 
-function EmptyState({ icon, title, message }) {
-  const IconComponent = icon;
-
+function EmptyState({ icon: Icon, title, message }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mb-4">
-        <IconComponent size={32} className="text-white/30" />
-      </div>
-      <p className="text-white/60 font-semibold text-lg mb-1">{title}</p>
-      <p className="text-sm text-white/40 max-w-md">{message}</p>
+    <div className="flex min-h-64 flex-col items-center justify-center border-y border-white/10 px-5 text-center">
+      <Icon size={32} className="mb-4 text-white/25" />
+      <h2 className="text-lg font-semibold text-white/70">{title}</h2>
+      <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/40">{message}</p>
     </div>
   );
 }

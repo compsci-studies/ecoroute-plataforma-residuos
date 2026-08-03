@@ -56,7 +56,7 @@ const AREA_TYPE_LABELS = {
 
 const ROLE_LABELS = {
   super_admin: "gestão geral",
-  org_admin: "cooperativa",
+  org_admin: "operador parceiro",
   driver: "coletor",
   customer: "cliente",
   system: "sistema",
@@ -215,7 +215,7 @@ const History = () => {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">Histórico operacional</h1>
         <p className="text-sm text-primary/60 mt-1">
-          {isSuperAdmin ? "Coletas, roteiros e desempenho consolidado das cooperativas" : "Histórico de coletas da sua cooperativa"}
+          {isSuperAdmin ? "Coletas, roteiros e desempenho consolidado dos operadores parceiros" : "Histórico de coletas do seu operador"}
         </p>
       </div>
 
@@ -880,7 +880,7 @@ const History = () => {
           {!mlLoading && completions.length === 0 && (
             <div className="text-center py-16 bg-white rounded-2xl border border-primary/10">
               <p className="text-lg font-semibold text-primary/70 mb-1">Nenhum roteiro concluído</p>
-              <p className="text-sm text-primary/40">As rotas finalizadas pelas cooperativas aparecerão aqui.</p>
+              <p className="text-sm text-primary/40">As rotas finalizadas pelos operadores parceiros aparecerão aqui.</p>
             </div>
           )}
 

@@ -47,7 +47,7 @@ const Drivers = () => {
   const handleAdd = async (e) => {
     e.preventDefault(); setFormError("");
     if (!form.name || !form.email || !form.phone || !form.password) { setFormError("Todos os campos são obrigatórios"); return; }
-    if (isSuperAdmin && !form.orgId) { setFormError("Selecione uma organização"); return; }
+    if (isSuperAdmin && !form.orgId) { setFormError("Selecione um operador parceiro"); return; }
     setSubmitting(true);
     const result = await addDriver(form);
     setSubmitting(false);
@@ -95,7 +95,11 @@ const Drivers = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-primary">Gestão de coletores</h1>
-          <p className="text-sm text-primary/50 mt-1">{isSuperAdmin ? "Gerencie coletores de todas as cooperativas" : "Gerencie os coletores da sua organização"}</p>
+          <p className="text-sm text-primary/50 mt-1">
+            {isSuperAdmin
+              ? "Coletores são os profissionais que executam as retiradas em nome de um operador parceiro; cada conta deve estar vinculada a esse operador."
+              : "Coletores são os profissionais da sua equipe que recebem, aceitam e executam as solicitações de coleta."}
+          </p>
         </div>
         <button onClick={() => { setShowAddModal(true); setFormError(""); }} className="px-5 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition-colors flex items-center gap-2 self-start sm:self-auto">
           <span className="text-lg leading-none">+</span> Novo coletor
@@ -125,7 +129,7 @@ const Drivers = () => {
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Email</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Telefone</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Status</th>
-                  {isSuperAdmin && <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Organização</th>}
+                  {isSuperAdmin && <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Operador parceiro</th>}
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Veículo vinculado</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Ações</th>
                 </tr>
@@ -194,7 +198,7 @@ const Drivers = () => {
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Email</label><input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="driver@example.com" className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Telefone</label><input type="text" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="(11) 98888-0000" className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Senha</label><input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Mínimo de 6 caracteres" className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
-              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Organização</label><select value={form.orgId} onChange={e => setForm({...form, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar organização...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
+              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Operador parceiro</label><select value={form.orgId} onChange={e => setForm({...form, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar operador...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
               {formError && <p className="text-red-500 text-sm">{formError}</p>}
               <button type="submit" disabled={submitting} className="w-full py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition disabled:opacity-50">{submitting ? "Criando..." : "Criar coletor"}</button>
             </form>
@@ -214,7 +218,7 @@ const Drivers = () => {
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Nome completo</label><input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Email</label><input type="email" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Telefone</label><input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
-              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Organização</label><select value={editForm.orgId} onChange={e => setEditForm({...editForm, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar organização...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
+              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Operador parceiro</label><select value={editForm.orgId} onChange={e => setEditForm({...editForm, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar operador...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
               {formError && <p className="text-red-500 text-sm">{formError}</p>}
               <button type="submit" disabled={submitting} className="w-full py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition disabled:opacity-50">{submitting ? "Salvando..." : "Salvar alterações"}</button>
             </form>
@@ -242,7 +246,7 @@ const Drivers = () => {
             ) : (
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                  <p className="text-sm text-amber-700">Isto envia uma solicitação de exclusão para aprovação do super administrador.</p>
+                  <p className="text-sm text-amber-700">Isto envia uma solicitação de exclusão para aprovação da administração da plataforma.</p>
                 </div>
                 <div><label className="block text-sm font-medium text-primary/60 mb-1">Justificativa da exclusão *</label><textarea value={deleteReason} onChange={e => setDeleteReason(e.target.value)} rows={3} placeholder="Explique por que este coletor deve ser removido..." className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none text-sm" /></div>
                 {formError && <p className="text-red-500 text-sm">{formError}</p>}

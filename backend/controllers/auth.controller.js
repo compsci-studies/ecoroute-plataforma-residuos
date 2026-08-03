@@ -196,7 +196,7 @@ export const requestOTP = async (req, res) => {
         channel: email ? "email" : "sms",
         contact: maskContact(contact),
       });
-      return res.status(404).json({ message: "User not found. Please sign up first." });
+      return res.status(404).json({ message: "Usuário não encontrado. Faça seu cadastro primeiro." });
     }
 
     // Check resend cooldown
@@ -291,7 +291,7 @@ export const verifyOTP = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
     // Check if OTP exists
@@ -391,4 +391,3 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch user", error: error.message });
   }
 };
-

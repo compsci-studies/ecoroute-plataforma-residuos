@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import TruckLoader from "../components/shared/TruckLoader";
 import useAuthStore from "../stores/useAuthStore";
 import {
@@ -10,33 +10,52 @@ import {
 import { getDashboardRoute } from "../utils/roleRouting";
 
 const PROFILE_CREDENTIALS = {
-  dono: DEMO_ADMIN_CREDENTIALS,
   admin: DEMO_ADMIN_CREDENTIALS,
   gestor: DEMO_ADMIN_CREDENTIALS,
   cliente: DEMO_CREDENTIALS,
   customer: DEMO_CREDENTIALS,
+  coletor: DEMO_DRIVER_CREDENTIALS,
   prestador: DEMO_DRIVER_CREDENTIALS,
   driver: DEMO_DRIVER_CREDENTIALS,
 };
 
 const PROFILE_LABELS = {
-  dono: "dono",
-  admin: "dono",
-  gestor: "dono",
-  cliente: "cliente",
-  customer: "cliente",
-  prestador: "prestador",
-  driver: "prestador",
+  admin: "perfil de administração",
+  gestor: "perfil de administração",
+  cliente: "perfil do cliente",
+  customer: "perfil do cliente",
+  coletor: "perfil do coletor",
+  prestador: "perfil do coletor",
+  driver: "perfil do coletor",
 };
 
+const ALLOWED_DEMO_DESTINATIONS = {
+  super_admin: new Set([
+    "/admin-dashboard",
+    "/admin-dashboard/pickup-stats",
+    "/admin-dashboard/reports",
+  ]),
+};
+
+function resolveDemoDestination(role, requestedDestination) {
+  const allowedDestinations = ALLOWED_DEMO_DESTINATIONS[role];
+  if (requestedDestination && allowedDestinations?.has(requestedDestination)) {
+    return requestedDestination;
+  }
+
+  return getDashboardRoute(role);
+}
+
 export default function DemoEntry() {
-  const { profile = "dono" } = useParams();
+  const { profile = "admin" } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const startedRef = useRef(false);
   const [error, setError] = useState("");
   const profileKey = String(profile).toLowerCase();
   const credentials = PROFILE_CREDENTIALS[profileKey];
+  const requestedDestination = new URLSearchParams(location.search).get("to");
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -50,9 +69,9 @@ export default function DemoEntry() {
         return;
       }
 
-      navigate(getDashboardRoute(result.user.role), { replace: true });
+      navigate(resolveDemoDestination(result.user.role, requestedDestination), { replace: true });
     });
-  }, [credentials, login, navigate]);
+  }, [credentials, login, navigate, requestedDestination]);
 
   const visibleError = !credentials ? "Perfil de demonstração não encontrado." : error;
 
@@ -73,12 +92,12 @@ export default function DemoEntry() {
     );
   }
 
-  const label = PROFILE_LABELS[profileKey] || "dono";
+  const label = PROFILE_LABELS[profileKey] || "perfil de administração";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-accent px-4 text-center">
       <div className="max-w-sm rounded-2xl border border-primary/10 bg-white p-8 shadow-xl shadow-primary/10">
-        <TruckLoader text={`Abrindo perfil demo do ${label}...`} />
+        <TruckLoader text={`Abrindo ${label}...`} />
       </div>
     </main>
   );

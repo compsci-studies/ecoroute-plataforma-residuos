@@ -13,19 +13,18 @@ export const VALID_ROLES = ['super_admin', 'admin', 'customer_admin', 'driver'];
  */
 export const ROLE_ROUTES = {
   super_admin: [
-    { path: '/admin-dashboard', label: 'Painel' },
-    { path: '/admin-dashboard/organizations', label: 'Organizações' },
-    { path: '/admin-dashboard/organization-banks', label: 'Bancos' },
+    { path: '/admin-dashboard', label: 'Visão geral' },
+    { path: '/admin-dashboard/organizations', label: 'Operadores' },
+    { path: '/admin-dashboard/organization-banks', label: 'Dados bancários' },
     { path: '/admin-dashboard/vehicles', label: 'Veículos' },
     { path: '/admin-dashboard/drivers', label: 'Coletores' },
     { path: '/admin-dashboard/reports', label: 'Relatórios' },
   ],
   admin: [
-    { path: '/admin-dashboard', label: 'Painel' },
-    { path: '/admin-dashboard/my-organization', label: 'Minha organização' },
-    { path: '/admin-dashboard/users', label: 'Usuários' },
-    { path: '/admin-dashboard/billing', label: 'Cobranças' },
-    { path: '/admin-dashboard/my-billing', label: 'Minha fatura' },
+    { path: '/admin-dashboard', label: 'Visão geral' },
+    { path: '/admin-dashboard/my-organization', label: 'Minha operação' },
+    { path: '/admin-dashboard/users', label: 'Contas e acessos' },
+    { path: '/admin-dashboard/billing', label: 'Pagamentos' },
     { path: '/admin-dashboard/vehicles', label: 'Veículos' },
     { path: '/admin-dashboard/drivers', label: 'Coletores' },
     { path: '/admin-dashboard/contact', label: 'Contato' },
@@ -34,7 +33,7 @@ export const ROLE_ROUTES = {
     { path: '/customer-dashboard', label: 'Painel' },
     { path: '/schedule', label: 'Agenda' },
     { path: '/upload-waste', label: 'Solicitar coleta' },
-    { path: '/billing', label: 'Cobranças' },
+    { path: '/billing', label: 'Pagamentos' },
   ],
   driver: [
     { path: '/driver-dashboard', label: 'Painel' },
@@ -50,6 +49,14 @@ export const ROLE_ROUTES = {
 export const getDashboardRoute = (role) => {
   const routes = ROLE_ROUTES[role];
   return routes?.[0]?.path || '/';
+};
+
+export const getPostAuthRoute = (role, intent) => {
+  if (intent === 'pickup' && role === 'customer_admin') {
+    return '/upload-waste';
+  }
+
+  return getDashboardRoute(role);
 };
 
 /**

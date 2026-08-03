@@ -16,7 +16,6 @@ const CustomerLoginPage = lazy(() => import("../components/auth/CustomerLogin"))
 const CustomerSignUpPage = lazy(() => import("../components/auth/CustomerSignup"));
 const Unauthorized = lazy(() => import("../pages/Unauthorized"));
 const AboutUs = lazy(() => import("../pages/AboutUs"));
-const OurTeam = lazy(() => import("../pages/OurTeam"));
 const ContactUs = lazy(() => import("../pages/ContactUs"));
 const Profile = lazy(() => import("../pages/Profile"));
 const DownloadApp = lazy(() => import("../pages/DownloadApp"));
@@ -48,7 +47,6 @@ const History = lazy(() => import("../pages/History"));
 const PricingConfig = lazy(() => import("../pages/PricingConfig"));
 const BillingPage = lazy(() => import("../components/users/BillingPage"));
 const BillingOverview = lazy(() => import("../pages/BillingOverview"));
-const AdminBilling = lazy(() => import("../pages/AdminBilling"));
 const AdminContact = lazy(() => import("../pages/AdminContact"));
 const PickupStatusToast = lazy(() => import("../components/users/PickupStatusToast"));
 const DriverStatusToast = lazy(() => import("../components/Driver/DriverStatusToast"));
@@ -83,7 +81,9 @@ const DashboardBillingRoute = () => {
 
 const CustomerBillingRoute = () => {
   const { user } = useAuthStore();
-  if (user?.role === "admin") return <Navigate to="/admin-dashboard/my-billing" replace />;
+  if (["admin", "super_admin"].includes(user?.role)) {
+    return <Navigate to="/admin-dashboard/billing" replace />;
+  }
   return (
     <ProtectedRoute allowedRoles={['customer_admin']}>
       <BillingPage />
@@ -122,7 +122,7 @@ const AppRoutes = () => {
 
         {/* Info Pages (accessible to everyone) */}
         <Route path="/about-us" element={<AboutUs />} />
-        <Route path="/our-team" element={<OurTeam />} />
+        <Route path="/our-team" element={<Navigate to="/about-us" replace />} />
         <Route path="/contact-us" element={<ContactUs />} />
 
         {/* Profile (all authenticated users) */}
@@ -284,11 +284,6 @@ const AppRoutes = () => {
           <Route path="history" element={<History />} />
           <Route path="pricing" element={<PricingConfig />} />
           <Route path="billing" element={<DashboardBillingRoute />} />
-          <Route path="my-billing" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminBilling />
-            </ProtectedRoute>
-          } />
           <Route path="contact" element={<AdminContact />} />
           <Route path="users" element={
             <ProtectedRoute allowedRoles={['super_admin', 'admin']}>

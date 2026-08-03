@@ -229,7 +229,7 @@ export async function estimateDemoPickup(payload = {}) {
     routeGeometry: route.geometry,
     fallback: route.fallback || false,
     depotLocation: ECOROUTE_DEPOT,
-    pickupWindow: route.distanceKm > 18 ? "Ate 48h uteis" : "Ate 24h uteis",
+    pickupWindow: route.distanceKm > 18 ? "Até 48h úteis" : "Até 24h úteis",
   };
 }
 

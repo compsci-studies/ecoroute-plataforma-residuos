@@ -96,7 +96,7 @@ const DriverMLAssignments = () => {
       setActualWasteKg("");
       setToast({ type: "success", message: result.message || `${area} marcada como concluída.` });
     } else {
-      setToast({ type: "error", message: "Não foi possível concluir a area" });
+      setToast({ type: "error", message: "Não foi possível concluir a área" });
     }
   };
 

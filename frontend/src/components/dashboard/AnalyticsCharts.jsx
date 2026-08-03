@@ -177,12 +177,6 @@ function shortMonth(monthKey) {
   return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 }
 
-function formatBillingRole(role) {
-  if (role === "customer_admin") return "Clientes";
-  if (role === "admin") return "Administradores";
-  return "Desconhecido";
-}
-
 function formatBRL(value = 0) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -201,7 +195,7 @@ function formatBRL(value = 0) {
  *   - dailyTrend, hourlyDistribution, topDrivers
  *   - orgBreakdown OR areaBreakdown
  */
-function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = "super_admin" }) {
+function AnalyticsCharts({ analyticsData, mode = "super_admin" }) {
   const { theme } = useDashboardTheme();
   const isDark = theme === "dark";
   const chartText = isDark ? themeColor("chartDarkText") : themeColor("chartText");
@@ -224,8 +218,6 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
 
   const isSuperAdmin = mode === "super_admin";
   const breakdown = isSuperAdmin ? orgBreakdown : areaBreakdown;
-  const monthlyBillRevenue = billingSummary?.monthlyRevenue || EMPTY_ARRAY;
-  const billRoleRevenue = billingSummary?.roleRevenue || EMPTY_ARRAY;
   const scheduleSummary = scheduleAnalytics.summary || EMPTY_OBJECT;
   const scheduleTrend = scheduleAnalytics.dailyTrend || EMPTY_ARRAY;
   const scheduledAreas = scheduleAnalytics.areaBreakdown || EMPTY_ARRAY;
@@ -372,53 +364,6 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
     ],
   }), [monthlyRevenue]);
 
-  const revenueComparisonData = useMemo(() => {
-    const monthKeys = Array.from(
-      new Set([
-        ...monthlyRevenue.map((row) => row.month),
-        ...monthlyBillRevenue.map((row) => row.month),
-      ])
-    ).sort();
-    const pickupByMonth = new Map(monthlyRevenue.map((row) => [row.month, row.revenue || 0]));
-    const billByMonth = new Map(monthlyBillRevenue.map((row) => [row.month, row.revenue || 0]));
-
-    return {
-      labels: monthKeys.map((month) => shortMonth(month)),
-      datasets: [
-        {
-          label: "Receita de coletas",
-          data: monthKeys.map((month) => pickupByMonth.get(month) || 0),
-          borderColor: themeColor("success"),
-          backgroundColor: alpha(themeColor("success"), 0.12),
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3,
-        },
-        {
-          label: "Mensalidades",
-          data: monthKeys.map((month) => billByMonth.get(month) || 0),
-          borderColor: themeColor("info"),
-          backgroundColor: alpha(themeColor("info"), 0.1),
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3,
-        },
-      ],
-    };
-  }, [monthlyRevenue, monthlyBillRevenue]);
-
-  const billRoleRevenueData = useMemo(() => ({
-    labels: billRoleRevenue.map((row) => formatBillingRole(row.role)),
-    datasets: [
-      {
-        label: "Receita mensal",
-        data: billRoleRevenue.map((row) => row.revenue || 0),
-        backgroundColor: [themeColor("info"), themeColor("violet"), themeColor("muted")],
-        borderRadius: 6,
-      },
-    ],
-  }), [billRoleRevenue]);
-
   const revenueOptions = {
     ...cartesianOptions,
     plugins: {
@@ -471,23 +416,6 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
         ...revenueOptions.scales.y,
         grid: { display: false },
         ticks: { ...cartesianOptions.scales.y.ticks, color: chartMuted },
-      },
-    },
-  };
-
-  const billRoleRevenueOptions = {
-    ...orgRevenueOptions,
-    plugins: {
-      ...orgRevenueOptions.plugins,
-      tooltip: {
-        ...orgRevenueOptions.plugins.tooltip,
-        callbacks: {
-          label: (ctx) => {
-            const row = billRoleRevenue[ctx.dataIndex];
-            const paidBills = row?.paidBills || 0;
-            return `Receita: ${formatBRL(ctx.raw || 0)} (${paidBills} cobranças pagas)`;
-          },
-        },
       },
     },
   };
@@ -598,60 +526,28 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
   return (
     <div className="space-y-6">
       {/* Headline KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard label="Receita de coletas" value={formatBRL(ecosystemStats.totalRevenue || 0)} hint="Receita contabilizada apenas em coletas concluídas." />
-        <KpiCard label="Receita mensal" value={formatBRL(billingSummary?.totalRevenue || 0)} valueClass="text-blue-600" hint="Receita recebida de mensalidades pagas." />
-        <KpiCard label="Cobranças em aberto" value={formatBRL(billingSummary?.totalOutstanding || 0)} valueClass="text-amber-600" hint="Valor ainda em aberto em cobranças não pagas, vencidas ou pendentes." />
         <KpiCard label="Taxa de conclusão" value={`${ecosystemStats.completionRate || 0}%`} valueClass="text-emerald-600" hint="Coletas concluídas divididas pelo total criado." />
         <KpiCard label="Resposta média" value={formatDuration(ecosystemStats.avgResponseMs)} valueClass="text-violet-600" hint="Tempo médio entre criação do pedido e resposta do coletor." />
         <KpiCard label="Duração média" value={formatDuration(ecosystemStats.avgTaskDurationMs)} valueClass="text-cyan-600" hint="Tempo médio entre aceite e conclusão da coleta." />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] gap-6">
-        <ChartCard
-          title="Receita por coletas e mensalidades"
-          subtitle="Compara coletas pagas e cobranças mensais pagas"
-          hint="Compara as duas fontes de receita do painel por mês."
-        >
-          <div className="h-72">
-            {monthlyRevenue.length > 0 || monthlyBillRevenue.length > 0 ? (
-              <LazyChart type="line" data={revenueComparisonData} options={revenueOptions} />
-            ) : (
-              <EmptyState message="Sem receita de coletas ou mensalidades ainda" />
-            )}
-          </div>
-        </ChartCard>
-
-        <ChartCard
-          title="Receita mensal"
-          subtitle="Cobranças pagas por perfil"
-          hint="Mostra de onde vem a receita mensal paga."
-        >
-          <div className="h-72">
-            {billRoleRevenue.some((row) => (row.revenue || 0) > 0) ? (
-              <LazyChart type="bar" data={billRoleRevenueData} options={billRoleRevenueOptions} />
-            ) : (
-              <EmptyState message="Sem mensalidades pagas ainda" />
-            )}
-          </div>
-        </ChartCard>
       </div>
 
       {/* Scheduled collection work from ML schedule assignments */}
       {hasScheduleData && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KpiCard label="Serviços agendados" value={(scheduleSummary.totalAssignments || 0).toLocaleString()} hint="Atribuições de coletor criadas pela agenda IA." />
-            <KpiCard label="Agenda concluída" value={(scheduleSummary.completedAssignments || 0).toLocaleString()} valueClass="text-emerald-600" hint="Atribuições marcadas como concluídas." />
-            <KpiCard label="Taxa da agenda" value={`${scheduleSummary.completionRate || 0}%`} valueClass="text-blue-600" hint="Atribuições concluídas em relação ao total agendado." />
-            <KpiCard label="Resíduo previsto" value={`${(scheduleSummary.predictedWasteKg || 0).toLocaleString()} kg`} valueClass="text-violet-600" hint="Total de resíduos previsto nas áreas da agenda IA." />
+            <KpiCard label="Serviços planejados" value={(scheduleSummary.totalAssignments || 0).toLocaleString()} hint="Atribuições de coletor criadas pelo planejamento de rotas." />
+            <KpiCard label="Planejamento concluído" value={(scheduleSummary.completedAssignments || 0).toLocaleString()} valueClass="text-emerald-600" hint="Atribuições marcadas como concluídas." />
+            <KpiCard label="Taxa de execução" value={`${scheduleSummary.completionRate || 0}%`} valueClass="text-blue-600" hint="Atribuições concluídas em relação ao total planejado." />
+            <KpiCard label="Resíduo previsto" value={`${(scheduleSummary.predictedWasteKg || 0).toLocaleString()} kg`} valueClass="text-violet-600" hint="Total de resíduos previsto nas áreas do planejamento." />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard
               title="Tendência das coletas agendadas"
-              subtitle="Atribuídas vs concluídas pela agenda IA"
-              hint="Compara o trabalho gerado pela IA com o volume finalizado por dia."
+              subtitle="Atribuídas vs concluídas pelo planejamento"
+              hint="Compara o trabalho sugerido pelo motor de otimização com o volume finalizado por dia."
             >
               <div className="h-72">
                 {scheduleTrend.length > 0 ? (
@@ -663,7 +559,7 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
             </ChartCard>
 
             <ChartCard
-              title="Areas agendadas"
+              title="Áreas agendadas"
               subtitle="Onde as coletas planejadas foram concluídas"
               hint="Mostra as áreas que recebem trabalho agendado e quanto foi concluído."
             >
@@ -724,22 +620,22 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
 
         {isSuperAdmin ? (
           <ChartCard
-            title="Receita por cooperativa"
-            subtitle="Receita de coletas pagas concluídas por organização"
-            hint="Ordena cooperativas pela receita gerada em coletas pagas concluídas."
+            title="Receita por operador"
+            subtitle="Receita de coletas pagas concluídas por operador parceiro"
+            hint="Ordena os operadores parceiros pela receita gerada em coletas pagas concluídas."
           >
             <div className="h-72">
               {orgBreakdown.some((org) => (org.revenue || 0) > 0) ? (
                 <LazyChart type="bar" data={orgRevenueData} options={orgRevenueOptions} />
               ) : (
-                <EmptyState message="Sem receita por cooperativa ainda" />
+                <EmptyState message="Sem receita por operador ainda" />
               )}
             </div>
           </ChartCard>
         ) : (
           <ChartCard
             title="Receita mensal"
-            subtitle="Receita de coletas pagas concluídas da sua organização"
+            subtitle="Receita de coletas pagas concluídas do seu operador"
             hint="Mostra a receita mensal gerada pela sua operação."
           >
             <div className="h-72">
@@ -803,15 +699,15 @@ function AnalyticsCharts({ analyticsData, billingSummary = EMPTY_OBJECT, mode = 
         </ChartCard>
 
         <ChartCard
-          title={isSuperAdmin ? "Top cooperativas" : "Top áreas"}
-          subtitle={isSuperAdmin ? "Volume de coletas por organização" : "Volume de coletas por área"}
+          title={isSuperAdmin ? "Top operadores" : "Top áreas"}
+          subtitle={isSuperAdmin ? "Volume de coletas por operador parceiro" : "Volume de coletas por área"}
           hint={isSuperAdmin ? "Ordena organizações por atividade de coleta." : "Ordena áreas de atendimento por atividade de coleta."}
         >
           <div className="h-72">
             {breakdown.length > 0 ? (
               <LazyChart type="bar" data={breakdownData} options={horizontalBarOptions} />
             ) : (
-              <EmptyState message={isSuperAdmin ? "Sem cooperativas com coletas" : "Sem dados por área"} />
+              <EmptyState message={isSuperAdmin ? "Sem operadores com coletas" : "Sem dados por área"} />
             )}
           </div>
         </ChartCard>

@@ -84,13 +84,13 @@ export default function DebugScheduleData() {
         </div>
         
         <div className="p-3 bg-blue-50 rounded">
-          <h3 className="font-semibold mb-2">Store da agenda IA usada pela tela do cliente:</h3>
+          <h3 className="font-semibold mb-2">Dados de planejamento usados pela tela do cliente:</h3>
           <ul className="text-sm space-y-1">
             <li>Carregando: {mlLoading ? 'sim' : 'não'}</li>
             <li>Erro: {mlError || 'nenhum'}</li>
             <li>Agenda pública: {publicSchedule ? 'dados disponíveis' : 'sem dados'}</li>
             {publicSchedule && (
-              <li>Areas: {publicSchedule.districts?.length || 0}</li>
+              <li>Áreas: {publicSchedule.districts?.length || 0}</li>
             )}
           </ul>
         </div>

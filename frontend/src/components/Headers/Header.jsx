@@ -14,7 +14,7 @@ export function Header() {
   const profileRef = useRef(null);
   const isCustomer = user?.role === "customer_admin";
 
-  const transparentHeaderRoutes = new Set(["/", "/demo", "/request-pickup", "/about-us", "/contact-us", "/help-support", "/login", "/signup", "/our-team", "/schedule", "/upload-waste", "/customer-dashboard", "/billing", "/download-app"]);
+  const transparentHeaderRoutes = new Set(["/", "/demo", "/request-pickup", "/about-us", "/contact-us", "/help-support", "/login", "/signup", "/schedule", "/upload-waste", "/customer-dashboard", "/billing", "/download-app"]);
   const isTransparentRoute = transparentHeaderRoutes.has(location.pathname);
 
   // Track scroll position
@@ -54,8 +54,8 @@ export function Header() {
   const navLinks = isAuthenticated && user ? getNavLinks(user.role) : [];
   const homePath = isAuthenticated && user ? getDashboardRoute(user.role) : "/";
   const roleLabels = {
-    super_admin: "Super admin",
-    admin: "Administrador",
+    super_admin: "Administrador da plataforma",
+    admin: "Gestor da operação",
     customer_admin: "Cliente",
     driver: "Coletor",
   };
@@ -78,7 +78,7 @@ export function Header() {
             <Link
               to="/"
               className="text-white font-extrabold text-2xl tracking-tight "
-              aria-label="EcoRoute home"
+              aria-label="Página inicial da EcoRoute"
             >
               EcoRoute
             </Link>
@@ -96,12 +96,6 @@ export function Header() {
                 className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
               >
                 Sobre
-              </Link>
-              <Link
-                to="/our-team"
-                className="px-3 lg:px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors"
-              >
-                Equipe
               </Link>
               <Link
                 to="/help-support"
@@ -128,7 +122,7 @@ export function Header() {
               </Link>
               <span className="h-6 w-px bg-white/20" aria-hidden="true" />
               <Link
-                to="/demo/dono"
+                to="/demo/admin"
                 className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/18 hover:border-white/40"
               >
                 <ShieldCheck size={16} />
@@ -147,7 +141,7 @@ export function Header() {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden text-white p-2 rounded-lg transition cursor-pointer"
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
             >
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -173,13 +167,6 @@ export function Header() {
                 Sobre
               </Link>
               <Link
-                to="/our-team"
-                onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
-              >
-                Equipe
-              </Link>
-              <Link
                 to="/contact-us"
                 onClick={() => setMobileOpen(false)}
                 className="block px-4 py-3 rounded-xl text-white/80 text-base  font-medium"
@@ -195,7 +182,7 @@ export function Header() {
               </Link>
               <div className="pt-4 border-t border-white/10 mt-4 space-y-3">
                 <Link
-                  to="/demo/dono"
+                  to="/demo/admin"
                   onClick={() => setMobileOpen(false)}
                   className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-full border border-white/30 bg-white/10 text-white text-base font-semibold"
                 >
@@ -271,6 +258,8 @@ export function Header() {
             <div ref={profileRef} className="relative">
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
+                aria-label="Abrir menu do perfil"
+                aria-expanded={profileOpen}
                 className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-white/10 transition cursor-pointer"
               >
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -326,7 +315,7 @@ export function Header() {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden text-white p-2 rounded-lg transition cursor-pointer"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
           >
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

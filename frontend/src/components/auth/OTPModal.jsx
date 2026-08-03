@@ -5,7 +5,7 @@ import { getDashboardRoute } from '../../utils/roleRouting';
 import { authAPI } from '../../utils/api';
 import TruckLoader from '../shared/TruckLoader';
 
-export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
+export default function OTPModal({ isOpen, onClose, email, onSuccess, successPath }) {
   const navigate = useNavigate();
   const { loginWithOTP } = useAuthStore();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -57,7 +57,7 @@ export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
   const handleVerify = useCallback(async () => {
     const code = otp.join('');
     if (code.length !== 6) {
-      setError('Informe os 6 digitos do código');
+      setError('Informe os 6 dígitos do código');
       return;
     }
 
@@ -68,11 +68,13 @@ export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
       const result = await loginWithOTP(code, email);
       if (result.success) {
         sessionStorage.removeItem('otpEmail');
-        const dashboardRoute = getDashboardRoute(result.user.role);
+        const dashboardRoute = successPath && result.user.role === 'customer_admin'
+          ? successPath
+          : getDashboardRoute(result.user.role);
         if (onSuccess) onSuccess(result);
         navigate(dashboardRoute, { replace: true });
       } else {
-        setError(result.error || 'Código invalido. Tente novamente.');
+        setError(result.error || 'Código inválido. Tente novamente.');
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }
@@ -83,7 +85,7 @@ export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
     } finally {
       setIsLoading(false);
     }
-  }, [email, loginWithOTP, navigate, onSuccess, otp]);
+  }, [email, loginWithOTP, navigate, onSuccess, otp, successPath]);
 
   const handleKeyDown = useCallback((index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
@@ -151,7 +153,7 @@ export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
             Verifique seu e-mail
           </h2>
           <p className="font-['Poppins',sans-serif] text-sm text-primary/60 mt-1">
-            Enviamos um código de 6 digitos para <span className="font-medium text-primary/80">{email}</span>
+            Enviamos um código de 6 dígitos para <span className="font-medium text-primary/80">{email}</span>
           </p>
         </div>
 
@@ -173,7 +175,7 @@ export default function OTPModal({ isOpen, onClose, email, onSuccess }) {
                 ${error ? 'border-red-400 bg-red-50/50' : digit ? 'border-primary bg-white' : 'border-primary/20 bg-accent/30'}
                 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30
                 disabled:opacity-50 disabled:cursor-not-allowed text-primary`}
-              aria-label={`Digito ${i + 1}`}
+              aria-label={`Dígito ${i + 1}`}
             />
           ))}
         </div>

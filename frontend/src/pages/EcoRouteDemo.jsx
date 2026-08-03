@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
+  Calculator,
   CalendarCheck,
+  ChevronDown,
   Clock,
   ExternalLink,
-  FileText,
   LocateFixed,
+  LogIn,
   MapPin,
   PackageCheck,
   RefreshCw,
@@ -15,9 +17,11 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import LocationPickerMap from "../components/shared/LocationPickerMap";
 import PickupBg from "../assets/ourteam.webp";
+import useAuthStore from "../stores/useAuthStore";
 import api from "../utils/api";
 
 const MATERIAL_LABELS = {
@@ -50,11 +54,29 @@ const FALLBACK_MATERIALS = [
   { id: "vidro" },
 ];
 
+const VOLUME_DIMENSIONS = [
+  { key: "length", label: "Comprimento", placeholder: "1,0" },
+  { key: "width", label: "Largura", placeholder: "0,6" },
+  { key: "height", label: "Altura", placeholder: "0,5" },
+];
+
 function formatCurrency(value, currency = "BRL") {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: currency || "BRL",
   }).format(Number(value || 0));
+}
+
+function parseLocalizedDecimal(value) {
+  const parsed = Number(String(value).trim().replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatVolume(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 3,
+  }).format(value);
 }
 
 function Field({ label, children }) {
@@ -129,6 +151,11 @@ function PointRow({ point, active, onClick }) {
 }
 
 export default function EcoRouteDemo() {
+  const routeLocation = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
+  const isCustomer = isAuthenticated && user?.role === "customer_admin";
+  const resultRef = useRef(null);
   const [material, setMaterial] = useState("reciclaveis");
   const [materialOptions, setMaterialOptions] = useState([]);
   const [points, setPoints] = useState([]);
@@ -138,22 +165,28 @@ export default function EcoRouteDemo() {
   const [location, setLocation] = useState({ latitude: null, longitude: null, address: "" });
   const [loadingPoints, setLoadingPoints] = useState(false);
   const [estimating, setEstimating] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [estimate, setEstimate] = useState(null);
-  const [requestResult, setRequestResult] = useState(null);
   const [error, setError] = useState("");
+  const [showVolumeCalculator, setShowVolumeCalculator] = useState(false);
+  const [volumeDimensions, setVolumeDimensions] = useState({
+    length: "",
+    width: "",
+    height: "",
+  });
   const [form, setForm] = useState({
-    requesterName: "Cliente EcoRoute",
-    contact: "cliente@ecoroute.com.br",
     weightKg: 24,
     volumeM3: 0.3,
     level: "easy",
-    notes: "",
   });
 
   const sourceLabel = source === "recicla-sampa-live" ? "Recicla Sampa" : "Base oficial de pontos";
   const selectedMaterialLabel = MATERIAL_LABELS[material] || material;
   const materialButtons = materialOptions.length > 0 ? materialOptions : FALLBACK_MATERIALS;
+  const calculatedVolume = useMemo(() => {
+    const dimensions = VOLUME_DIMENSIONS.map(({ key }) => parseLocalizedDecimal(volumeDimensions[key]));
+    if (dimensions.some((dimension) => dimension <= 0)) return null;
+    return dimensions.reduce((total, dimension) => total * dimension, 1);
+  }, [volumeDimensions]);
 
   const loadPoints = useCallback(async () => {
     setLoadingPoints(true);
@@ -187,7 +220,34 @@ export default function EcoRouteDemo() {
     api.get("/demo/metrics")
       .then((response) => setMetrics(response.data.metrics))
       .catch(() => setMetrics(null));
-  }, [requestResult?.id]);
+  }, []);
+
+  useEffect(() => {
+    const targetId = routeLocation.hash.slice(1);
+    if (!targetId) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [routeLocation.hash]);
+
+  useEffect(() => {
+    if (!estimate) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      resultRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [estimate]);
 
   const estimatePayload = useMemo(() => ({
     latitude: location.latitude,
@@ -207,7 +267,6 @@ export default function EcoRouteDemo() {
 
     setEstimating(true);
     setError("");
-    setRequestResult(null);
     try {
       const response = await api.post("/demo/pickup-estimate", estimatePayload);
       setEstimate(response.data);
@@ -220,28 +279,24 @@ export default function EcoRouteDemo() {
     }
   };
 
-  const handleCreateRequest = async () => {
-    let currentEstimate = estimate;
-    if (!currentEstimate) {
-      currentEstimate = await handleEstimate();
-      if (!currentEstimate) return;
+  const handleStartPickup = () => {
+    if (isCustomer) {
+      navigate("/upload-waste");
+      return;
     }
 
-    setSubmitting(true);
-    setError("");
-    try {
-      const response = await api.post("/demo/pickup-requests", {
-        ...estimatePayload,
-        requesterName: form.requesterName,
-        contact: form.contact,
-        notes: form.notes,
-      });
-      setRequestResult(response.data.request);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Falha ao criar solicitação.");
-    } finally {
-      setSubmitting(false);
-    }
+    navigate("/login", { state: { intent: "pickup" } });
+  };
+
+  const applyCalculatedVolume = () => {
+    if (!calculatedVolume) return;
+
+    setForm((current) => ({
+      ...current,
+      volumeM3: Number(calculatedVolume.toFixed(3)),
+    }));
+    setEstimate(null);
+    setShowVolumeCalculator(false);
   };
 
   return (
@@ -258,16 +313,16 @@ export default function EcoRouteDemo() {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
                 <Truck size={14} />
-                EcoRoute coleta sob demanda
+                Consulta pública
               </span>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[3.2rem]">
-                Solicitar coleta de resíduos
+                Simule uma coleta e consulte pontos de descarte
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-white/60 sm:text-lg">
-                Informe o material, o volume e o endereço de retirada. A EcoRoute calcula a taxa,
-                registra o protocolo e indica pontos de descarte próximos quando fizer sentido.
+                Sem login, você pode estimar a taxa e localizar ecopontos reais. Para registrar
+                o pedido e gerar um protocolo, entre com um perfil de cliente.
               </p>
             </div>
 
@@ -279,7 +334,7 @@ export default function EcoRouteDemo() {
           </div>
         </section>
 
-        <section className="mt-7 px-5 md:px-10 lg:px-16">
+        <section id="solicitacao" className="mt-7 scroll-mt-24 px-5 md:px-10 lg:px-16">
           <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl lg:grid-cols-[0.9fr_1.35fr]">
             <aside className="relative hidden min-h-[620px] overflow-hidden bg-primary px-7 py-8 text-white sm:px-10 lg:block lg:px-12">
               <div
@@ -294,80 +349,40 @@ export default function EcoRouteDemo() {
                     <Truck className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Fluxo de coleta</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">Simulação pública</p>
                     <p className="text-2xl font-bold tracking-tight">EcoRoute</p>
                   </div>
                 </div>
 
                 <div className="mt-10">
                   <h2 className="text-4xl font-bold leading-tight tracking-tight">
-                    Coleta sob demanda com rastreio e pontos de apoio.
+                    Planeje a retirada antes de solicitar.
                   </h2>
                   <p className="mt-5 text-base leading-7 text-white/60">
-                    Centralize solicitações residenciais e empresariais, precifique a retirada por peso,
-                    volume e rota, e mantenha alternativas reais de descarte no mesmo atendimento.
+                    Consulte material, peso, volume, rota e pontos de descarte sem criar um pedido.
+                    A solicitação real fica vinculada à conta do cliente.
                   </p>
                 </div>
 
                 <div className="mt-9 space-y-6">
                   <StepRow number="1" title="Material e volume" text="Identifique o resíduo, o peso aproximado, o volume e a dificuldade da retirada." />
-                  <StepRow number="2" title="Endereço de coleta" text="Posicione o local de retirada e confira pontos próximos no mapa." />
-                  <StepRow number="3" title="Taxa e protocolo" text="Calcule a taxa estimada e gere um protocolo rastreável para acompanhamento." />
+                  <StepRow number="2" title="Endereço de referência" text="Posicione o local no mapa e confira pontos de descarte próximos." />
+                  <StepRow number="3" title="Taxa e acesso" text="Calcule a estimativa e entre como cliente para registrar a coleta e gerar o protocolo." />
                 </div>
 
-                <div className="mt-auto pt-9">
-                  {estimate ? (
-                    <div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/70">Estimativa atual</p>
-                      <div className="mt-3 flex items-end justify-between gap-4">
-                        <p className="text-4xl font-extrabold text-white">
-                          {formatCurrency(estimate.estimatedPrice, estimate.currency)}
-                        </p>
-                        <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-bold text-white">
-                          {estimate.distanceKm} km
-                        </span>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/70">
-                        <span className="rounded-xl bg-white/8 px-3 py-2">
-                          <Clock className="mr-1 inline h-3.5 w-3.5" />
-                          {estimate.pickupWindow}
-                        </span>
-                        <span className="rounded-xl bg-white/8 px-3 py-2">
-                          <Route className="mr-1 inline h-3.5 w-3.5" />
-                          {Math.round(estimate.durationMinutes)} min
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-5">
-                      <p className="text-sm font-semibold text-white">Preencha endereço e material</p>
-                      <p className="mt-2 text-sm leading-6 text-white/55">
-                        A estimativa aparece aqui antes da geração do protocolo.
-                      </p>
-                    </div>
-                  )}
-
-                  {requestResult && (
-                    <div className="mt-4 rounded-2xl border border-blue-300/25 bg-blue-300/10 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/70">Protocolo gerado</p>
-                      <p className="mt-2 text-2xl font-extrabold text-white">{requestResult.id}</p>
-                      <p className="mt-2 text-sm text-white/60">Status: {requestResult.status}</p>
-                    </div>
-                  )}
-                </div>
               </div>
             </aside>
 
-            <section className="bg-[#f8faf6] px-5 py-6 text-primary sm:px-8 lg:px-10">
+            <section className="min-w-0 bg-[#f8faf6] px-5 py-6 text-primary sm:px-8 lg:px-10">
               <div className="flex flex-col gap-4 border-b border-primary/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/40">Pedido de coleta</p>
-                  <h2 className="mt-1 text-3xl font-bold tracking-tight text-primary">Dados da solicitação</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/40">Simulação de coleta</p>
+                  <h2 className="mt-1 text-3xl font-bold tracking-tight text-primary">Dados para estimativa</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-primary shadow-sm">
                     <ShieldCheck size={14} />
-                    Protocolo digital
+                    Nenhum pedido é criado
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-primary shadow-sm">
                     <LocateFixed size={14} />
@@ -404,7 +419,6 @@ export default function EcoRouteDemo() {
                             onClick={() => {
                               setMaterial(option.id);
                               setEstimate(null);
-                              setRequestResult(null);
                             }}
                             className={`min-h-12 rounded-2xl border px-3 py-2 text-left text-xs font-bold transition ${
                               active
@@ -420,23 +434,6 @@ export default function EcoRouteDemo() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nome">
-                      <input
-                        value={form.requesterName}
-                        onChange={(event) => setForm({ ...form, requesterName: event.target.value })}
-                        className="h-12 w-full rounded-2xl border border-primary/12 bg-white px-4 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-                      />
-                    </Field>
-                    <Field label="Contato">
-                      <input
-                        value={form.contact}
-                        onChange={(event) => setForm({ ...form, contact: event.target.value })}
-                        className="h-12 w-full rounded-2xl border border-primary/12 bg-white px-4 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <Field label="Peso kg">
                       <input
                         type="number"
@@ -445,25 +442,105 @@ export default function EcoRouteDemo() {
                         onChange={(event) => {
                           setForm({ ...form, weightKg: event.target.value });
                           setEstimate(null);
-                          setRequestResult(null);
                         }}
                         className="h-12 w-full rounded-2xl border border-primary/12 bg-white px-4 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
                       />
                     </Field>
-                    <Field label="Volume m3">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={form.volumeM3}
-                        onChange={(event) => {
-                          setForm({ ...form, volumeM3: event.target.value });
-                          setEstimate(null);
-                          setRequestResult(null);
-                        }}
-                        className="h-12 w-full rounded-2xl border border-primary/12 bg-white px-4 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-                      />
+                    <Field label="Volume aproximado">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={form.volumeM3}
+                          onChange={(event) => {
+                            setForm({ ...form, volumeM3: event.target.value });
+                            setEstimate(null);
+                          }}
+                          aria-describedby="volume-help"
+                          className="h-12 w-full rounded-2xl border border-primary/12 bg-white px-4 pr-12 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs font-bold text-primary/45">
+                          m³
+                        </span>
+                      </div>
+                      <span id="volume-help" className="mt-2 block text-xs leading-5 text-primary/55">
+                        Espaço total ocupado. Ex.: 1,0 m × 0,6 m × 0,5 m = 0,30 m³.
+                      </span>
                     </Field>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white/70">
+                    <button
+                      type="button"
+                      onClick={() => setShowVolumeCalculator((current) => !current)}
+                      aria-expanded={showVolumeCalculator}
+                      aria-controls="volume-calculator"
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left outline-none transition hover:bg-primary/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/20"
+                    >
+                      <span className="flex items-center gap-3 text-sm font-bold text-primary">
+                        <Calculator size={17} />
+                        Não sabe o volume? Calcule pelas medidas
+                      </span>
+                      <ChevronDown
+                        size={17}
+                        className={`shrink-0 text-primary/45 transition ${showVolumeCalculator ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {showVolumeCalculator && (
+                      <div id="volume-calculator" className="border-t border-primary/10 px-4 py-4">
+                        <p className="text-xs leading-5 text-primary/55">
+                          Meça em metros a menor caixa imaginária que comportaria todo o material.
+                        </p>
+
+                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                          {VOLUME_DIMENSIONS.map(({ key, label, placeholder }) => (
+                            <label key={key} className="block">
+                              <span className="mb-1.5 block text-[11px] font-semibold text-primary/55">
+                                {label}
+                              </span>
+                              <span className="relative block">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={volumeDimensions[key]}
+                                  onChange={(event) => {
+                                    const nextValue = event.target.value.replace(/[^0-9.,]/g, "");
+                                    setVolumeDimensions((current) => ({ ...current, [key]: nextValue }));
+                                  }}
+                                  placeholder={placeholder}
+                                  className="h-11 w-full rounded-xl border border-primary/12 bg-white px-3 pr-7 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
+                                />
+                                <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-[11px] font-bold text-primary/40">
+                                  m
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+
+                        <div className="mt-4 flex flex-col gap-3 rounded-xl bg-primary/[0.04] p-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div aria-live="polite">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/45">
+                              Volume calculado
+                            </p>
+                            <p className="mt-0.5 text-lg font-extrabold text-primary">
+                              {calculatedVolume ? `${formatVolume(calculatedVolume)} m³` : "Preencha as três medidas"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={applyCalculatedVolume}
+                            disabled={!calculatedVolume}
+                            aria-label={calculatedVolume ? `Usar volume de ${formatVolume(calculatedVolume)} metros cúbicos` : "Usar volume calculado"}
+                            className="min-h-11 whitespace-nowrap rounded-xl bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Usar volume
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -480,7 +557,6 @@ export default function EcoRouteDemo() {
                             onClick={() => {
                               setForm({ ...form, level: level.id });
                               setEstimate(null);
-                              setRequestResult(null);
                             }}
                             className={`rounded-2xl border px-3 py-3 text-center transition ${
                               active
@@ -495,16 +571,6 @@ export default function EcoRouteDemo() {
                       })}
                     </div>
                   </div>
-
-                  <Field label="Observações">
-                    <textarea
-                      rows={3}
-                      value={form.notes}
-                      onChange={(event) => setForm({ ...form, notes: event.target.value })}
-                      className="w-full resize-none rounded-2xl border border-primary/12 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
-                      placeholder="Ex.: retirar na portaria comercial"
-                    />
-                  </Field>
 
                   {error && (
                     <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
@@ -531,7 +597,6 @@ export default function EcoRouteDemo() {
                       onChange={(nextLocation) => {
                         setLocation(nextLocation);
                         setEstimate(null);
-                        setRequestResult(null);
                       }}
                       height="360px"
                       label=""
@@ -544,7 +609,7 @@ export default function EcoRouteDemo() {
                     />
                   </div>
 
-                  <div>
+                  <div id="pontos-de-descarte" className="scroll-mt-28">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/40">Alternativa pública</p>
@@ -584,23 +649,24 @@ export default function EcoRouteDemo() {
 
               <div className="grid gap-3 border-t border-primary/10 pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
                 <button
+                  id="calculo-da-taxa"
                   type="button"
                   onClick={handleEstimate}
                   disabled={estimating}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-5 text-sm font-extrabold text-primary transition hover:border-primary/35 disabled:opacity-60"
+                  className="inline-flex h-12 scroll-mt-28 items-center justify-center gap-2 rounded-full border border-primary/15 bg-white px-5 text-sm font-extrabold text-primary transition hover:border-primary/35 disabled:opacity-60"
                 >
                   {estimating ? <RefreshCw size={17} className="animate-spin" /> : <Search size={17} />}
                   Calcular taxa
                 </button>
 
                 <button
+                  id="geracao-de-protocolo"
                   type="button"
-                  onClick={handleCreateRequest}
-                  disabled={submitting || estimating}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:opacity-60"
+                  onClick={handleStartPickup}
+                  className="inline-flex h-12 scroll-mt-28 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-extrabold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
                 >
-                  {submitting ? <RefreshCw size={17} className="animate-spin" /> : <FileText size={17} />}
-                  Gerar protocolo
+                  {isCustomer ? <Truck size={17} /> : <LogIn size={17} />}
+                  {isCustomer ? "Continuar solicitação" : "Entrar para solicitar"}
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-xs font-semibold text-primary/45 sm:justify-end">
@@ -609,6 +675,75 @@ export default function EcoRouteDemo() {
                   <BadgeCheck size={14} />
                 </div>
               </div>
+
+              {estimate && (
+                <section
+                  ref={resultRef}
+                  aria-live="polite"
+                  aria-label="Resultado da simulação"
+                  className="mt-5 scroll-mt-28 overflow-hidden rounded-2xl border border-primary/10 bg-white shadow-sm"
+                >
+                  <div className="flex flex-col gap-3 border-b border-primary/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary/40">
+                        Resultado da simulação
+                      </p>
+                      <h3 className="mt-1 text-xl font-extrabold text-primary">
+                        Estimativa pronta para revisão
+                      </h3>
+                    </div>
+                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                      <BadgeCheck size={14} />
+                      Dados calculados
+                    </span>
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                          <div>
+                            <p className="text-xs font-semibold text-primary/45">Taxa estimada</p>
+                            <p className="mt-1 text-4xl font-extrabold tracking-tight text-primary">
+                              {formatCurrency(estimate.estimatedPrice, estimate.currency)}
+                            </p>
+                          </div>
+                          <span className="w-fit rounded-full border border-primary/10 bg-[#f8faf6] px-3 py-2 text-xs font-bold text-primary/65">
+                            {selectedMaterialLabel}
+                          </span>
+                        </div>
+
+                        <dl className="mt-5 grid border-y border-primary/10 sm:grid-cols-3 sm:divide-x sm:divide-primary/10">
+                          <div className="py-4 sm:pr-4">
+                            <dt className="flex items-center gap-2 text-xs font-semibold text-primary/45">
+                              <Route size={14} />
+                              Distância
+                            </dt>
+                            <dd className="mt-1 text-base font-extrabold text-primary">{estimate.distanceKm} km</dd>
+                          </div>
+                          <div className="border-t border-primary/10 py-4 sm:border-t-0 sm:px-4">
+                            <dt className="flex items-center gap-2 text-xs font-semibold text-primary/45">
+                              <Clock size={14} />
+                              Tempo de rota
+                            </dt>
+                            <dd className="mt-1 text-base font-extrabold text-primary">
+                              {Math.round(estimate.durationMinutes)} min
+                            </dd>
+                          </div>
+                          <div className="border-t border-primary/10 py-4 sm:border-t-0 sm:pl-4">
+                            <dt className="flex items-center gap-2 text-xs font-semibold text-primary/45">
+                              <CalendarCheck size={14} />
+                              Janela de coleta
+                            </dt>
+                            <dd className="mt-1 text-base font-extrabold text-primary">{estimate.pickupWindow}</dd>
+                          </div>
+                        </dl>
+
+                        <p className="mt-4 text-xs leading-5 text-primary/45">
+                          Esta estimativa não cria um pedido. Entre como cliente para registrar a coleta,
+                          escolher o pagamento e acompanhar o protocolo.
+                        </p>
+                  </div>
+                </section>
+              )}
             </section>
           </div>
         </section>

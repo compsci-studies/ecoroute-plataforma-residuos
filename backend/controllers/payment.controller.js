@@ -43,6 +43,11 @@ function adminCanAccessPickup(pickup, user) {
 
 function paymentPayload(p) {
   if (!p) return null;
+  const pickup = Array.isArray(p.pickup) ? p.pickup[0] : p.pickup;
+  const customer = Array.isArray(p.customer) ? p.customer[0] : p.customer;
+  const driver = Array.isArray(p.driver) ? p.driver[0] : p.driver;
+  const organization = Array.isArray(p.organization) ? p.organization[0] : p.organization;
+
   return {
     id: p._id,
     pickupId: p.pickupId,
@@ -58,6 +63,39 @@ function paymentPayload(p) {
     failedAt: p.failedAt,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
+    customer: customer
+      ? {
+          id: customer._id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+        }
+      : null,
+    driver: driver
+      ? {
+          id: driver._id,
+          name: driver.name,
+          email: driver.email,
+          phone: driver.phone,
+        }
+      : null,
+    organization: organization
+      ? {
+          id: organization._id,
+          name: organization.name,
+        }
+      : null,
+    pickup: pickup
+      ? {
+          id: pickup._id,
+          status: pickup.status,
+          category: pickup.category,
+          level: pickup.level,
+          location: pickup.location,
+          estimatedPrice: pickup.estimatedPrice,
+          currency: pickup.currency,
+        }
+      : null,
   };
 }
 
@@ -581,6 +619,45 @@ export const getAllPayments = async (req, res) => {
     if (status) filter.status = status;
     const maxLimit = Math.min(Number(limit) || 100, 500);
 
+    const enrichmentStages = [
+      {
+        $lookup: {
+          from: "pickuprequests",
+          localField: "pickupId",
+          foreignField: "_id",
+          as: "pickup",
+        },
+      },
+      { $unwind: { path: "$pickup", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "driverId",
+          foreignField: "_id",
+          as: "driver",
+        },
+      },
+      { $unwind: { path: "$driver", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "organizations",
+          localField: "pickup.orgId",
+          foreignField: "_id",
+          as: "organization",
+        },
+      },
+      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+    ];
+
     const scopedStages = [];
     if (role === "admin") {
       if (!orgId || !mongoose.isValidObjectId(orgId)) {
@@ -590,42 +667,27 @@ export const getAllPayments = async (req, res) => {
       const orgObjectId = new mongoose.Types.ObjectId(orgId);
       scopedStages.push(
         {
-          $lookup: {
-            from: "pickuprequests",
-            localField: "pickupId",
-            foreignField: "_id",
-            as: "pickup",
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "customerId",
-            foreignField: "_id",
-            as: "customer",
-          },
-        },
-        {
           $match: {
             $or: [
               { "pickup.orgId": orgObjectId },
               { "customer.orgId": orgObjectId },
             ],
           },
-        },
-        { $project: { pickup: 0, customer: 0 } }
+        }
       );
     }
 
     const [payments, totals] = await Promise.all([
       Payment.aggregate([
         { $match: filter },
+        ...enrichmentStages,
         ...scopedStages,
         { $sort: { createdAt: -1 } },
         { $limit: maxLimit },
       ]),
       Payment.aggregate([
         { $match: { status: "COMPLETED" } },
+        ...enrichmentStages,
         ...scopedStages,
         {
           $group: {

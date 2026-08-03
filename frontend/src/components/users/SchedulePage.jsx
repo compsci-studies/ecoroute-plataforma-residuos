@@ -27,7 +27,7 @@ import {
   FileWarning,
 } from "lucide-react";
 
-/* ── Viewport observer (same pattern as OurTeam) ── */
+/* ── Viewport observer shared by the customer flow ── */
 
 function useInView() {
   const ref = useRef(null);
@@ -326,7 +326,7 @@ function DetailPanel({ item, onClose }) {
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
             <p className="text-xs text-blue-400/60 font-medium uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5" />
-              Recomendação por IA
+              Recomendação de rota
             </p>
             <p className="text-sm text-blue-200/70 leading-relaxed">
               {item.recommendation}
@@ -537,7 +537,7 @@ function SchedulePage() {
 
   return (
     <div className="relative min-h-screen font-['Outfit',sans-serif] bg-black">
-      {/* ── Dynamic Background (same as OurTeam) ── */}
+      {/* ── Dynamic background ── */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${ScheduleBg})` }}
@@ -562,7 +562,7 @@ function SchedulePage() {
 
           <FadeIn delay={200}>
             <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed mb-4">
-              Rotas e decisoes de despacho otimizadas por IA para a operação urbana.
+              Rotas e decisões de despacho sugeridas para apoiar a operação urbana.
             </p>
             <div className="flex items-center justify-center gap-2 text-white/45 text-sm">
               <Clock className="w-4 h-4" />
@@ -575,7 +575,7 @@ function SchedulePage() {
               )}
               <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-white/45 text-[10px] font-semibold">
                 <Leaf className="w-2.5 h-2.5" />
-                IA ativa
+                Otimização ativa
               </span>
             </div>
           </FadeIn>
@@ -585,7 +585,7 @@ function SchedulePage() {
         <section className="pb-8 px-6 md:px-16 lg:px-24">
           <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: MapPin, value: totalAreas, label: "Areas" },
+              { icon: MapPin, value: totalAreas, label: "Áreas" },
               { icon: Truck, value: dispatchedCount, label: "Despachadas" },
               { icon: SkipForward, value: skippedCount, label: "Puladas" },
               {

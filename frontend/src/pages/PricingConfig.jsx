@@ -181,8 +181,8 @@ const PricingConfig = () => {
           Distância e taxa mínima
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
-            <label className="block text-xs uppercase tracking-wider text-primary/50 font-semibold mb-2">
+          <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] p-4">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-primary/70">
               Taxa por quilômetro (R$)
             </label>
             <input
@@ -196,8 +196,8 @@ const PricingConfig = () => {
               }`}
             />
           </div>
-          <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
-            <label className="block text-xs uppercase tracking-wider text-primary/50 font-semibold mb-2">
+          <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] p-4">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-primary/70">
               Taxa mínima (R$)
             </label>
             <input
@@ -215,11 +215,11 @@ const PricingConfig = () => {
       </section>
 
       {/* Formula Preview */}
-      <section className="rounded-2xl border border-primary/10 bg-linear-to-br from-brand-surface-soft to-accent p-5 sm:p-6 shadow-sm">
+      <section className="rounded-2xl border border-[var(--dash-border)] bg-[var(--dash-card)] p-5 shadow-sm sm:p-6">
         <h3 className="font-['Outfit',sans-serif] text-base font-semibold text-primary mb-3">
           Fórmula de precificação
         </h3>
-        <div className="bg-white/80 rounded-xl border border-primary/10 p-4 font-mono text-sm text-primary/80">
+        <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] p-4 font-mono text-sm text-primary/85">
           <p>total = max(taxaMinima, taxaBase x multiplicador + distância x taxaKm)</p>
           <p className="mt-2 text-xs text-primary/50">
             Exemplo: não reciclável + dificuldade média + 10 km = max({formValues.minimumCharge}, {formValues.nonRecyclable} x {formValues.medium} + 10 x {formValues.distanceRatePerKm}) = <strong>R$ {Math.max(Number(formValues.minimumCharge), Number(formValues.nonRecyclable) * Number(formValues.medium) + 10 * Number(formValues.distanceRatePerKm))}</strong>
@@ -263,7 +263,7 @@ function PriceField({ label, tag, value, onChange, readOnly, color }) {
   const tagStyle = colorMap[color] || colorMap.green;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+    <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] p-4">
       <div className="flex items-center gap-2 mb-2">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${tagStyle}`}>
           {tag}
@@ -271,7 +271,7 @@ function PriceField({ label, tag, value, onChange, readOnly, color }) {
         <span className="text-sm font-semibold text-primary">{label}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-primary/50">R$</span>
+        <span className="text-sm font-medium text-primary/70">R$</span>
         <input
           type="number"
           min="0"
@@ -289,13 +289,13 @@ function PriceField({ label, tag, value, onChange, readOnly, color }) {
 
 function MultiplierField({ label, desc, value, onChange, readOnly }) {
   return (
-    <div className="rounded-xl border border-primary/10 bg-brand-surface-soft p-4">
+    <div className="rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] p-4">
       <div className="mb-2">
         <span className="text-sm font-semibold text-primary">{label}</span>
-        <span className="ml-2 text-xs text-primary/40">{desc}</span>
+        <span className="ml-2 text-xs text-primary/65">{desc}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-primary/50">×</span>
+        <span className="text-sm font-medium text-primary/70">×</span>
         <input
           type="number"
           min="0"

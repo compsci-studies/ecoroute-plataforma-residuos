@@ -21,7 +21,6 @@ import notificationRoutes from "./routes/notification.route.js";
 import historyRoutes from "./routes/history.route.js";
 import pricingConfigRoutes from "./routes/pricingConfig.route.js";
 import paymentRoutes from "./routes/payment.route.js";
-import billingRoutes from "./routes/billing.route.js";
 import ecorouteDemoRoutes from "./routes/ecorouteDemo.route.js";
 import { cleanupExpiredUploads } from "./controllers/upload.controller.js";
 import { logger, metrics, reportError, requestObservability } from "./utils/observability.js";
@@ -98,7 +97,6 @@ export function createApp() {
   app.use("/api/history", historyRoutes);
   app.use("/api/pricing-config", pricingConfigRoutes);
   app.use("/api/payments", paymentRoutes);
-  app.use("/api/billing", billingRoutes);
   app.use("/api/demo", ecorouteDemoRoutes);
 
   app.get("/", (req, res) => {

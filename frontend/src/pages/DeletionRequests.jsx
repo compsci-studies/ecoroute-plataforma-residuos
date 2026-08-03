@@ -85,7 +85,7 @@ const DeletionRequests = ({ onUpdate }) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-primary">Solicitações de exclusão</h1>
-          <p className="text-sm text-primary/60 mt-1">{isSuperAdmin ? "Revise pedidos de remoção enviados por cooperativas e administradores" : "Acompanhe os pedidos enviados pela sua operação"}</p>
+          <p className="text-sm text-primary/60 mt-1">{isSuperAdmin ? "Revise pedidos de remoção enviados pelos operadores e seus gestores" : "Acompanhe os pedidos enviados pela sua operação"}</p>
         </div>
         {isSuperAdmin && (
           <div className="flex items-center gap-1 bg-primary/5 rounded-xl p-1">
@@ -122,7 +122,7 @@ const DeletionRequests = ({ onUpdate }) => {
       ) : error ? (
         <AdminErrorState message={error} onRetry={fetchRequests} />
       ) : requests.length === 0 ? (
-        <AdminEmptyState icon={ClipboardList} title="Nenhuma solicitação encontrada" message={isSuperAdmin ? "Pedidos enviados por cooperativas aparecerão aqui." : "As solicitações enviadas pela sua operação aparecerão aqui."} />
+        <AdminEmptyState icon={ClipboardList} title="Nenhuma solicitação encontrada" message={isSuperAdmin ? "Pedidos enviados pelos operadores aparecerão aqui." : "As solicitações enviadas pela sua operação aparecerão aqui."} />
       ) : (
         <div className="space-y-3">
           {requests.map(r => (
@@ -139,7 +139,7 @@ const DeletionRequests = ({ onUpdate }) => {
                     <p className="text-primary/70"><span className="font-medium">Motivo:</span> {r.reason}</p>
                     <p className="text-primary/50">
                       Solicitado por <strong>{r.requestedBy?.name}</strong> ({r.requestedBy?.email})
-                      {r.orgId?.name && <> · Cooperativa: <strong>{r.orgId.name}</strong></>}
+                      {r.orgId?.name && <> · Operador: <strong>{r.orgId.name}</strong></>}
                       {" · "}{new Date(r.createdAt).toLocaleDateString("pt-BR")}
                     </p>
                     {r.status !== "pending" && r.reviewedBy && (

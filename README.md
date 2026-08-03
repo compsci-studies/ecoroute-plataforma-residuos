@@ -4,9 +4,9 @@ Plataforma web full-stack para gerenciamento, descarte orientado e coleta inteli
 
 ## Visão geral
 
-A EcoRoute é uma aplicação web voltada ao contexto brasileiro de gestão de resíduos. O sistema reúne três fluxos principais: consulta de pontos de descarte, solicitação de coleta no endereço informado pelo usuário e gestão operacional por prestadores e administradores.
+A EcoRoute é uma aplicação web voltada ao contexto brasileiro de gestão de resíduos. O sistema reúne três fluxos principais: consulta de pontos de descarte, solicitação de coleta no endereço informado pelo usuário e gestão operacional por empresas ou cooperativas prestadoras.
 
-O projeto foi desenvolvido como demonstração completa para Sistemas de Informação, com frontend, backend, banco de dados, autenticação, perfis de acesso, mapas, precificação, painel administrativo, agenda, notificações, cobrança demonstrativa via Pix e módulo de previsão para apoio à distribuição de coletas.
+O projeto foi desenvolvido como demonstração completa para Sistemas de Informação, com frontend, backend, banco de dados, autenticação, perfis de acesso, mapas, precificação, painel administrativo, planejamento de rotas, notificações, pagamento demonstrativo via Pix e módulo de previsão para apoio à distribuição de coletas.
 
 ## Problema atendido
 
@@ -18,9 +18,9 @@ A EcoRoute centraliza essas necessidades em uma única plataforma:
 - mapa com ecopontos e cooperativas da base demonstrativa brasileira;
 - pedido de coleta domiciliar ou empresarial;
 - estimativa de preço por tipo, peso, volume e deslocamento;
-- painel do cliente com histórico e cobranças;
-- painel do prestador com tarefas, rotas e status;
-- painel de administração para gestão de usuários, veículos, áreas, faturamento e indicadores.
+- painel do cliente com histórico e pagamentos por coleta;
+- painel do coletor com tarefas, rotas e status;
+- painel de administração para gestão de operadores parceiros, usuários, veículos, áreas, pagamentos e indicadores.
 
 ## Perfis de demonstração
 
@@ -29,10 +29,24 @@ A aplicação possui três rotas de entrada para demonstração:
 | Perfil | Rota | E-mail | Senha |
 | --- | --- | --- | --- |
 | Cliente | `/demo/cliente` | `demo@ecoroute.com.br` | `EcoRoute@2026` |
-| Prestador | `/demo/prestador` | `prestador@ecoroute.com.br` | `EcoRoute@2026` |
-| Administração | `/demo/dono` | `dono@ecoroute.com.br` | `EcoRoute@2026` |
+| Coletor | `/demo/coletor` | `prestador@ecoroute.com.br` | `EcoRoute@2026` |
+| Administração da plataforma | `/demo/admin` | `administracao@ecoroute.com.br` | `EcoRoute@2026` |
 
 Essas rotas criam uma sessão local com token demonstrativo e carregam dados previamente preparados para apresentar o funcionamento do sistema sem depender de cadastro manual.
+
+## Modelo operacional e perfis
+
+Os nomes abaixo representam conceitos diferentes. Uma organização não é uma pessoa nem uma conta de acesso.
+
+| Conceito | Representação no sistema | Responsabilidade | Paga a EcoRoute? |
+| --- | --- | --- | --- |
+| Cliente | usuário com papel `customer_admin` | solicita a retirada, acompanha a coleta e paga o preço daquele serviço | sim, por coleta |
+| Operador parceiro | entidade `Organization` | cooperativa ou empresa prestadora que reúne base, áreas, frota e equipe | não |
+| Gestor da operação | usuário com papel `admin` e vínculo a uma `Organization` | coordena coletores, veículos, áreas, pagamentos recebidos e planejamento de rotas | não |
+| Coletor | usuário com papel `driver` e vínculo a uma `Organization` | aceita e executa as retiradas em campo; confirma recebimentos em dinheiro | não |
+| Administração da plataforma | usuário com papel `super_admin` | governa a rede EcoRoute, cadastra operadores e monitora resultados consolidados | não |
+
+O fluxo comercial é único: o cliente solicita uma coleta, o sistema calcula o preço conforme as características do serviço, o cliente escolhe Pix ou dinheiro e um coletor de um operador parceiro executa a retirada. Não existe mensalidade cobrada de gestores ou coletores.
 
 ## Funcionalidades principais
 
@@ -51,12 +65,12 @@ Essas rotas criam uma sessão local com token demonstrativo e carregam dados pre
 - solicitação de coleta;
 - upload de imagem do resíduo;
 - acompanhamento de status;
-- histórico de cobranças;
+- histórico de pagamentos por coleta;
 - pagamento em dinheiro ou Pix demonstrativo;
 - comprovante de pagamento;
 - perfil do usuário.
 
-### Prestador
+### Coletor
 
 - painel de disponibilidade;
 - listagem de tarefas;
@@ -75,12 +89,12 @@ Essas rotas criam uma sessão local com token demonstrativo e carregam dados pre
 - gestão de áreas de atendimento;
 - gestão de motoristas;
 - gestão de veículos;
-- painel de cobrança;
+- painel de pagamentos das coletas;
 - configuração de preços;
 - estatísticas de coleta;
 - relatórios;
 - mensagens internas;
-- agenda inteligente com apoio de ML.
+- planejamento diário de rotas com apoio de ML e confirmação do gestor.
 
 ## Arquitetura
 
@@ -144,10 +158,9 @@ O backend concentra regras de negócio, persistência e integração entre módu
 | `/api/demo` | dados e rotas de demonstração |
 | `/api/pickups` | pedidos de coleta |
 | `/api/payments` | pagamento de pedidos |
-| `/api/billing` | cobranças mensais |
 | `/api/locations` | pontos e locais |
-| `/api/organizations` | cooperativas e organizações |
-| `/api/drivers` | prestadores/motoristas |
+| `/api/organizations` | operadores parceiros (cooperativas ou empresas) |
+| `/api/drivers` | coletores vinculados aos operadores |
 | `/api/areas` | áreas de atendimento |
 | `/api/ml-schedule` | agenda inteligente |
 | `/api/contact` | mensagens de contato |
@@ -169,14 +182,13 @@ As principais entidades são:
 
 | Modelo | Descrição |
 | --- | --- |
-| `User` | usuários dos perfis cliente, prestador e administração |
-| `Organization` | cooperativas ou organizações de coleta |
+| `User` | usuários dos perfis cliente, coletor e administração |
+| `Organization` | cooperativa ou empresa prestadora; não é uma conta de usuário |
 | `Area` | regiões atendidas |
 | `Truck` | veículos disponíveis |
 | `PickupRequest` | solicitação de coleta |
 | `PickupEvent` | eventos do ciclo de vida da coleta |
 | `Payment` | transações de pagamento de pedidos |
-| `Billing` | cobranças mensais |
 | `PricingConfig` | configuração de preço |
 | `Location` | pontos de coleta/descarte |
 | `MLSchedule` | agenda gerada para operação |
@@ -188,8 +200,8 @@ As principais entidades são:
 2. O sistema consulta pontos e calcula estimativa.
 3. O pedido é criado em `PickupRequest`.
 4. O pagamento é escolhido: dinheiro ou Pix demonstrativo.
-5. O pedido é liberado para prestadores.
-6. O prestador aceita a tarefa.
+5. O pedido é liberado para os coletores elegíveis do operador parceiro.
+6. Um coletor aceita a tarefa.
 7. A tarefa passa por deslocamento, chegada, coleta e conclusão.
 8. O cliente acompanha o status no painel.
 9. A administração vê indicadores e histórico.
@@ -251,16 +263,16 @@ O frontend foi construído com React e Vite. A interface usa navegação por per
 | `/customer-dashboard` | painel do cliente |
 | `/upload-waste` | envio de resíduo |
 | `/schedule` | agenda |
-| `/billing` | cobranças |
-| `/searching` | busca de prestador |
+| `/billing` | pagamentos das coletas |
+| `/searching` | busca de coletor |
 | `/payment-success` | comprovante |
 | `/profile` | perfil |
 
-### Rotas autenticadas do prestador
+### Rotas autenticadas do coletor
 
 | Rota | Tela |
 | --- | --- |
-| `/driver-dashboard` | painel do prestador |
+| `/driver-dashboard` | painel do coletor |
 | `/accept-task` | aceitar tarefa |
 | `/task-route/:pickupId` | rota da coleta |
 | `/task-flow/:pickupId` | fluxo de atendimento |
@@ -271,20 +283,20 @@ O frontend foi construído com React e Vite. A interface usa navegação por per
 | Rota | Tela |
 | --- | --- |
 | `/admin-dashboard` | painel geral |
-| `/admin-dashboard/users` | usuários |
-| `/admin-dashboard/organizations` | cooperativas |
+| `/admin-dashboard/users` | contas e acessos |
+| `/admin-dashboard/organizations` | operadores parceiros |
 | `/admin-dashboard/areas` | áreas |
-| `/admin-dashboard/drivers` | prestadores |
+| `/admin-dashboard/drivers` | coletores |
 | `/admin-dashboard/vehicles` | veículos |
-| `/admin-dashboard/billing` | cobranças |
+| `/admin-dashboard/billing` | pagamentos das coletas |
 | `/admin-dashboard/pricing` | preços |
 | `/admin-dashboard/pickup-stats` | estatísticas |
 | `/admin-dashboard/reports` | relatórios |
 | `/admin-dashboard/contact` | contato |
 
-## ML e agenda inteligente
+## ML e planejamento de rotas
 
-O módulo `ml` gera previsão de volume de resíduos por área e apoia a distribuição de veículos. Ele usa um dataset sintético da Grande São Paulo, com:
+O módulo `ml` gera previsão de volume de resíduos por área e sugere a distribuição de veículos e coletores. A sugestão não substitui a decisão operacional: um gestor revisa e confirma o planejamento antes do despacho. O módulo usa um dataset sintético da Grande São Paulo, com:
 
 - bairros e regiões paulistas;
 - estações brasileiras;

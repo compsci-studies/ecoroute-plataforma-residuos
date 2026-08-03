@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Zap, CalendarDays, Sprout, Recycle } from 'lucide-react';
 import useAuthStore from '../../stores/useAuthStore';
 import { ecorouteImages } from '../../assets/ecorouteImages';
-import { getDashboardRoute } from '../../utils/roleRouting';
+import { getPostAuthRoute } from '../../utils/roleRouting';
 import OTPModal from './OTPModal';
 import TruckLoader from '../shared/TruckLoader';
 
 function CustomerSignUpPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signup, isAuthenticated, user } = useAuthStore();
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
   const [errors, setErrors] = useState({});
@@ -16,12 +17,14 @@ function CustomerSignUpPage() {
   const [showOTP, setShowOTP] = useState(false);
   const [locationStatus, setLocationStatus] = useState('idle'); // idle | loading | success | denied | unavailable | error
   const requestInFlightRef = useRef(false);
+  const authIntent = location.state?.intent;
+  const pickupIntent = authIntent === 'pickup';
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(getDashboardRoute(user.role), { replace: true });
+      navigate(getPostAuthRoute(user.role, authIntent), { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [authIntent, isAuthenticated, user, navigate]);
 
   const fetchLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -98,7 +101,7 @@ function CustomerSignUpPage() {
           sessionStorage.setItem('otpEmail', formData.email);
           setShowOTP(true);
         } else {
-          navigate(getDashboardRoute(result.user.role), { replace: true });
+          navigate(getPostAuthRoute(result.user.role, authIntent), { replace: true });
         }
       } else {
         setErrors({ submit: result.error || 'Não foi possível criar a conta. Tente novamente.' });
@@ -180,7 +183,9 @@ function CustomerSignUpPage() {
         <div className="md:w-7/12 bg-white flex flex-col justify-center px-10 sm:px-14 py-12 md:py-16">
           <h2 className="font-bold text-3xl text-primary mb-2">Criar conta</h2>
           <p className="text-primary/50 text-base mb-8">
-            Informe seus dados para acessar a plataforma EcoRoute
+            {pickupIntent
+              ? 'Cadastre-se para seguir diretamente para a solicitação de coleta'
+              : 'Informe seus dados para acessar a plataforma EcoRoute'}
           </p>
 
           <div className="space-y-5">
@@ -339,6 +344,7 @@ function CustomerSignUpPage() {
               Já tem conta?{' '}
               <Link
                 to="/login"
+                state={location.state}
                 className="font-semibold text-primary hover:text-brand-primary-hover transition-colors"
               >
                 Entrar
@@ -353,6 +359,7 @@ function CustomerSignUpPage() {
         isOpen={showOTP}
         onClose={() => setShowOTP(false)}
         email={formData.email}
+        successPath={pickupIntent ? '/upload-waste' : undefined}
       />
     </div>
   );

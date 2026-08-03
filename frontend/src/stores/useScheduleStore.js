@@ -28,7 +28,7 @@ const useScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to fetch schedules:", error);
             set({
-                error: error.response?.data?.message || error.message || "Failed to fetch schedules",
+                error: error.response?.data?.message || error.message || "Não foi possível carregar as agendas",
                 loading: false
             });
         }
@@ -43,7 +43,7 @@ const useScheduleStore = create((set, get) => ({
             set({ locations: data });
         } catch (error) {
             console.error("Failed to fetch locations:", error);
-            set({ error: error.response?.data?.message || error.message || "Failed to fetch locations" });
+            set({ error: error.response?.data?.message || error.message || "Não foi possível carregar os locais" });
         }
     },
 
@@ -56,7 +56,7 @@ const useScheduleStore = create((set, get) => ({
             set({ drivers: data });
         } catch (error) {
             console.error("Failed to fetch drivers:", error);
-            set({ error: error.response?.data?.message || error.message || "Failed to fetch drivers" });
+            set({ error: error.response?.data?.message || error.message || "Não foi possível carregar os coletores" });
         }
     },
 
@@ -74,7 +74,7 @@ const useScheduleStore = create((set, get) => ({
             set({ loading: false });
         } catch (error) {
             console.error("Failed to load initial data:", error);
-            set({ loading: false, error: error.message || "Failed to load initial data" });
+            set({ loading: false, error: error.message || "Não foi possível carregar os dados iniciais" });
         }
     }
 }));

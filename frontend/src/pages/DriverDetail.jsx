@@ -121,7 +121,7 @@ const DriverDetail = () => {
       {/* Info Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-primary/10 p-5">
-          <p className="text-xs text-primary/50 uppercase tracking-wider font-medium mb-1">Organização</p>
+          <p className="text-xs text-primary/50 uppercase tracking-wider font-medium mb-1">Operador parceiro</p>
           <p className="text-lg font-bold text-primary">{driver.organization?.name || "N/A"}</p>
         </div>
         <div className="bg-white rounded-2xl border border-primary/10 p-5">

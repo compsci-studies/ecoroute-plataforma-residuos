@@ -4,6 +4,13 @@ const dateKey = (offsetDays = 0) => {
   return date.toISOString().slice(0, 10);
 };
 
+const dayName = (offsetDays = 0) => {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const label = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
 const monthKey = (offsetMonths = 0) => {
   const date = new Date();
   date.setMonth(date.getMonth() + offsetMonths);
@@ -77,7 +84,7 @@ export const DEMO_ADMIN_ANALYTICS = Object.freeze({
   topDrivers: [
     {
       driverId: "demo-driver-001",
-      name: "Prestador Demonstração",
+      name: "Carlos Almeida",
       email: "prestador@ecoroute.com.br",
       completed: 34,
       revenue: 9480,
@@ -140,7 +147,7 @@ export const DEMO_ADMIN_ANALYTICS = Object.freeze({
       { name: "Santana", assigned: 5, completed: 4 },
     ],
     topDrivers: [
-      { driverId: "demo-driver-001", name: "Prestador Demonstração", assigned: 12, completed: 10 },
+      { driverId: "demo-driver-001", name: "Carlos Almeida", assigned: 12, completed: 10 },
       { driverId: "demo-driver-002", name: "Mariana Lopes", assigned: 10, completed: 8 },
       { driverId: "demo-driver-003", name: "Rafael Nogueira", assigned: 9, completed: 7 },
     ],
@@ -151,148 +158,85 @@ export const DEMO_ADMIN_SCHEDULES = Object.freeze([
   {
     _id: "demo-schedule-today",
     date: dateKey(0),
+    dayName: dayName(0),
     status: "confirmed",
     totalPredictedWasteKg: 4120,
+    summary: {
+      totalAreas: 6,
+      dispatched: 4,
+      reduced: 1,
+      skipped: 1,
+      totalTrucksAssigned: 4,
+      totalTrucksAvailable: 4,
+      driverlessTrucks: 0,
+    },
     areas: [
-      { area: "Pinheiros", action: "dispatch", predictedWasteKg: 980, wasteLevel: "critical" },
-      { area: "Bela Vista", action: "dispatch", predictedWasteKg: 820, wasteLevel: "high" },
-      { area: "Moema", action: "dispatch", predictedWasteKg: 730, wasteLevel: "high" },
-      { area: "Vila Mariana", action: "reduced", predictedWasteKg: 610, wasteLevel: "medium" },
-      { area: "Santana", action: "dispatch", predictedWasteKg: 540, wasteLevel: "medium" },
-      { area: "Tatuapé", action: "skip", predictedWasteKg: 440, wasteLevel: "low" },
+      {
+        area: "Pinheiros",
+        action: "dispatch",
+        predictedWasteKg: 980,
+        wasteCategory: "critical",
+        assignedTrucks: [{ truckId: "demo-truck-001", licensePlate: "ECV-2026", capacity: 1800, driverName: "Carlos Almeida" }],
+      },
+      {
+        area: "Bela Vista",
+        action: "dispatch",
+        predictedWasteKg: 820,
+        wasteCategory: "high",
+        assignedTrucks: [{ truckId: "demo-truck-002", licensePlate: "PIN-4182", capacity: 1600, driverName: "Mariana Lopes" }],
+      },
+      {
+        area: "Moema",
+        action: "dispatch",
+        predictedWasteKg: 730,
+        wasteCategory: "high",
+        assignedTrucks: [{ truckId: "demo-truck-003", licensePlate: "ESU-3014", capacity: 2000, driverName: "Rafael Nogueira" }],
+      },
+      {
+        area: "Vila Mariana",
+        action: "reduced",
+        predictedWasteKg: 610,
+        wasteCategory: "medium",
+        assignedTrucks: [{ truckId: "demo-truck-001", licensePlate: "ECV-2026", capacity: 1800, driverName: "Carlos Almeida" }],
+      },
+      {
+        area: "Santana",
+        action: "dispatch",
+        predictedWasteKg: 540,
+        wasteCategory: "medium",
+        assignedTrucks: [{ truckId: "demo-truck-004", licensePlate: "NRT-5521", capacity: 1200, driverName: "João Carvalho" }],
+      },
+      {
+        area: "Tatuapé",
+        action: "skip",
+        predictedWasteKg: 440,
+        wasteCategory: "low",
+        assignedTrucks: [],
+        skipReason: "Aguardando disponibilidade de veículo e coletor.",
+      },
     ],
   },
   {
     _id: "demo-schedule-yesterday",
     date: dateKey(-1),
+    dayName: dayName(-1),
     status: "completed",
     totalPredictedWasteKg: 3860,
+    summary: {
+      totalAreas: 4,
+      dispatched: 3,
+      reduced: 1,
+      skipped: 0,
+      totalTrucksAssigned: 3,
+      totalTrucksAvailable: 4,
+      driverlessTrucks: 0,
+    },
     areas: [
       { area: "Centro", action: "dispatch", predictedWasteKg: 910, wasteLevel: "high" },
       { area: "Perdizes", action: "dispatch", predictedWasteKg: 760, wasteLevel: "high" },
       { area: "Saúde", action: "dispatch", predictedWasteKg: 620, wasteLevel: "medium" },
       { area: "Lapa", action: "reduced", predictedWasteKg: 520, wasteLevel: "medium" },
     ],
-  },
-]);
-
-export const DEMO_ADMIN_BILLING_SUMMARY = Object.freeze({
-  totalRevenue: 24700,
-  totalOutstanding: 5800,
-  totalBills: 46,
-  paid: 35,
-  unpaid: 8,
-  overdue: 3,
-  cashPending: 2,
-  paymentMethodRevenue: {
-    cash: 9100,
-    online: 15600,
-    total: 24700,
-  },
-  monthlyRevenue: [
-    { month: monthKey(-5), revenue: 6800 },
-    { month: monthKey(-4), revenue: 8100 },
-    { month: monthKey(-3), revenue: 9600 },
-    { month: monthKey(-2), revenue: 11900 },
-    { month: monthKey(-1), revenue: 15100 },
-    { month: monthKey(0), revenue: 24700 },
-  ],
-  roleRevenue: [
-    { role: "customer_admin", revenue: 17600, paidBills: 28 },
-    { role: "admin", revenue: 7100, paidBills: 7 },
-  ],
-});
-
-export const DEMO_ADMIN_BILLING_OVERVIEW = Object.freeze({
-  bills: [
-    {
-      _id: "demo-bill-001",
-      billedUserName: "Condomínio Paulista",
-      billedUserEmail: "financeiro@condominiopaulista.com.br",
-      billedRole: "customer_admin",
-      amount: 690,
-      status: "paid",
-      paymentMethod: "pix",
-      paidAt: dateKey(-2),
-      dueDate: dateKey(5),
-    },
-    {
-      _id: "demo-bill-002",
-      billedUserName: "Recicla Pinheiros",
-      billedUserEmail: "admin@reciclapinheiros.com.br",
-      billedRole: "admin",
-      amount: 1500,
-      status: "unpaid",
-      paymentMethod: null,
-      paidAt: null,
-      dueDate: dateKey(7),
-    },
-    {
-      _id: "demo-bill-003",
-      billedUserName: "Empresa Paulista",
-      billedUserEmail: "operacoes@empresapaulista.com.br",
-      billedRole: "customer_admin",
-      amount: 920,
-      status: "overdue",
-      paymentMethod: null,
-      paidAt: null,
-      dueDate: dateKey(-3),
-    },
-  ],
-  accounts: [
-    {
-      _id: "demo-account-001",
-      name: "Condomínio Paulista",
-      email: "financeiro@condominiopaulista.com.br",
-      role: "customer_admin",
-      totalPaid: 4200,
-      totalOutstanding: 0,
-      billCount: 6,
-    },
-    {
-      _id: "demo-account-002",
-      name: "Recicla Pinheiros",
-      email: "admin@reciclapinheiros.com.br",
-      role: "admin",
-      totalPaid: 7100,
-      totalOutstanding: 1500,
-      billCount: 7,
-    },
-    {
-      _id: "demo-account-003",
-      name: "Empresa Paulista",
-      email: "operacoes@empresapaulista.com.br",
-      role: "customer_admin",
-      totalPaid: 3680,
-      totalOutstanding: 920,
-      billCount: 5,
-    },
-  ],
-  summary: DEMO_ADMIN_BILLING_SUMMARY,
-  defaulters: [
-    {
-      _id: "demo-account-003",
-      name: "Empresa Paulista",
-      email: "operacoes@empresapaulista.com.br",
-      overdueAmount: 920,
-      overdueBills: 1,
-    },
-  ],
-  pagination: {
-    page: 1,
-    limit: 10,
-    total: 3,
-    pages: 1,
-  },
-});
-
-export const DEMO_ADMIN_BILLING_CONFIGS = Object.freeze([
-  {
-    _id: "demo-config-global",
-    orgId: null,
-    customerMonthlyFee: 690,
-    adminMonthlyFee: 1500,
-    active: true,
   },
 ]);
 

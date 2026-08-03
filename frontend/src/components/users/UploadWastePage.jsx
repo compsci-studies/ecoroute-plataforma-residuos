@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useUploadStore from '../../stores/useUploadStore';
 import UploadBg from '../../assets/ourteam.webp';
 
-/* ── Viewport observer (same pattern as OurTeam / SchedulePage) ── */
+/* ── Viewport observer shared by the customer flow ── */
 
 function useInView() {
   const ref = useRef(null);
@@ -104,14 +104,14 @@ function UploadWastePage() {
       id: 'medium',
       label: 'Média',
       badge: 'L2',
-      description: 'Carga moderada, entre 35 e 120 kg ou varios volumes.',
+      description: 'Carga moderada, entre 35 e 120 kg ou vários volumes.',
       color: 'amber',
     },
     {
       id: 'hard',
       label: 'Alta',
       badge: 'L3',
-      description: 'Retirada pesada, volumosa ou com acesso mais dificil.',
+      description: 'Retirada pesada, volumosa ou com acesso mais difícil.',
       color: 'red',
     },
   ], []);
@@ -182,7 +182,14 @@ function UploadWastePage() {
 
   const handleSubmit = async () => {
     if (!file) {
-      alert('Envie uma foto do material antes de continuar');
+      resetUploadState();
+      navigate('/searching', {
+        state: {
+          wasteUploadId: null,
+          category,
+          level,
+        },
+      });
       return;
     }
 
@@ -215,7 +222,7 @@ function UploadWastePage() {
   const stepComplete = (step) => {
     if (step === 1) return true; // category always selected
     if (step === 2) return true; // level always selected
-    if (step === 3) return !!file;
+    if (step === 3) return true; // photo is optional
     return false;
   };
 
@@ -240,13 +247,13 @@ function UploadWastePage() {
 
           <FadeIn delay={100}>
             <h1 className="font-bold text-white text-4xl sm:text-5xl lg:text-[3.5rem] leading-[1.1] tracking-tight mb-6 drop-shadow-md">
-              Foto e classificação do resíduo
+              Classificação do resíduo
             </h1>
           </FadeIn>
 
           <FadeIn delay={200}>
             <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
-              Informe o tipo de material, a complexidade da retirada e envie uma foto para agilizar a avaliação.
+              Informe o tipo de material e a complexidade da retirada. Se desejar, envie uma foto para agilizar a avaliação.
             </p>
           </FadeIn>
 
@@ -260,7 +267,7 @@ function UploadWastePage() {
               {[
                 { step: 1, label: 'Material' },
                 { step: 2, label: 'Retirada' },
-                { step: 3, label: 'Foto' },
+                { step: 3, label: 'Foto opcional' },
               ].map((s, i) => (
                 <div key={s.step} className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -429,13 +436,16 @@ function UploadWastePage() {
               {/* Step 3: Upload image */}
               <FadeIn delay={450}>
                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 sm:p-6 hover:border-white/15 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-5">
+                  <div className="flex flex-wrap items-center gap-3 mb-5">
                     <div className="w-8 h-8 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                       <span className="text-sm font-bold text-violet-400">3</span>
                     </div>
                     <h2 className="text-xl sm:text-2xl font-semibold text-white">
                       Foto do material
                     </h2>
+                    <span className="rounded-md border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-violet-300">
+                      Opcional
+                    </span>
                   </div>
 
                   <label
@@ -462,10 +472,10 @@ function UploadWastePage() {
                           </svg>
                         </div>
                         <p className="font-semibold text-white text-lg mb-2">
-                          Arraste a foto aqui ou clique para escolher
+                          Adicione uma foto, se desejar
                         </p>
                         <p className="text-sm text-white/40">
-                          JPEG, PNG, WebP até 5 MB
+                          Arraste ou clique para escolher · JPEG, PNG ou WebP até 5 MB
                         </p>
                         <input
                           type="file"
@@ -522,7 +532,7 @@ function UploadWastePage() {
                     {[
                       'Use boa iluminação e evite sombras fortes.',
                       'Mantenha o material centralizado na imagem.',
-                      'Evite fotos borradas ou com baixa resolucao.',
+                      'Evite fotos borradas ou com baixa resolução.',
                       'Use arquivos abaixo de 5 MB para envio mais rápido.',
                     ].map((tip, i) => (
                       <li key={i} className="flex items-start gap-3 text-white/50">
@@ -581,13 +591,16 @@ function UploadWastePage() {
                   {/* Image File */}
                   <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                     <p className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1.5">
-                      Arquivo da foto
+                      Foto do material · opcional
                     </p>
-                    <p className="font-semibold text-white truncate" title={file?.name || 'Nenhum arquivo selecionado'}>
-                      {file ? file.name : lastUpload?.url ? 'Foto enviada' : 'Nenhum arquivo selecionado'}
+                    <p className="font-semibold text-white truncate" title={file?.name || 'Nenhuma foto adicionada'}>
+                      {file ? file.name : lastUpload?.url ? 'Foto enviada' : 'Nenhuma foto adicionada'}
                     </p>
                     {file && (
                       <p className="mt-1 text-xs text-white/40">{formatFileSize(file.size)}</p>
+                    )}
+                    {!file && !lastUpload?.url && (
+                      <p className="mt-1 text-xs text-white/40">Você pode continuar sem imagem.</p>
                     )}
                   </div>
 
@@ -626,8 +639,8 @@ function UploadWastePage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={!file || isSubmitting || justSubmitted}
-                  className={`mt-6 w-full rounded-xl py-3.5 font-semibold text-base transition-all duration-300 ${!file || isSubmitting || justSubmitted
+                  disabled={isSubmitting || justSubmitted}
+                  className={`mt-6 w-full rounded-xl py-3.5 font-semibold text-base transition-all duration-300 ${isSubmitting || justSubmitted
                     ? 'bg-white/10 text-white/30 cursor-not-allowed border border-white/10'
                     : 'bg-white text-black hover:bg-gray-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg'
                     }`}
@@ -638,7 +651,9 @@ function UploadWastePage() {
                       : 'Enviando...'
                     : justSubmitted
                       ? 'Redirecionando...'
-                      : 'Enviar dados da coleta'}
+                      : file
+                        ? 'Enviar foto e continuar'
+                        : 'Continuar sem foto'}
                 </button>
               </aside>
             </FadeIn>

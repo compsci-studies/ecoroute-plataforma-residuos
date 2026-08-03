@@ -25,7 +25,7 @@ const useAreaStore = create((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error.response?.data?.message || "Failed to fetch areas",
+        error: error.response?.data?.message || "Não foi possível carregar as áreas",
         loading: false,
       });
     }
@@ -37,7 +37,7 @@ const useAreaStore = create((set, get) => ({
       await get().fetchAreas({ page: 1 });
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.message || "Failed to create area" };
+      return { success: false, error: error.response?.data?.message || "Não foi possível criar a área" };
     }
   },
 
@@ -57,7 +57,7 @@ const useAreaStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       if (previousAreas) set({ areas: previousAreas });
-      return { success: false, error: error.response?.data?.message || "Failed to update area" };
+      return { success: false, error: error.response?.data?.message || "Não foi possível atualizar a área" };
     }
   },
 
@@ -67,7 +67,7 @@ const useAreaStore = create((set, get) => ({
       await get().fetchAreas();
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.message || "Failed to delete area" };
+      return { success: false, error: error.response?.data?.message || "Não foi possível excluir a área" };
     }
   },
 }));

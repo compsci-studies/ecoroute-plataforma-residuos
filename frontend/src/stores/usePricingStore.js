@@ -15,7 +15,7 @@ const usePricingStore = create((set) => ({
     } catch (err) {
       set({
         loading: false,
-        error: err.response?.data?.message || "Failed to load pricing config",
+        error: err.response?.data?.message || "Não foi possível carregar a configuração de preços",
       });
     }
   },
@@ -27,7 +27,7 @@ const usePricingStore = create((set) => ({
       set({ config: res.data.data, saving: false });
       return { success: true };
     } catch (err) {
-      const message = err.response?.data?.message || "Failed to update pricing config";
+      const message = err.response?.data?.message || "Não foi possível atualizar a configuração de preços";
       set({ saving: false, error: message });
       return { success: false, error: message };
     }

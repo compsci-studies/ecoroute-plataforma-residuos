@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, CalendarDays, Recycle, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { MapPin, CalendarDays, Recycle, LockKeyhole, ShieldCheck, Truck } from 'lucide-react';
 import { authAPI } from '../../utils/api';
 import useAuthStore from '../../stores/useAuthStore';
 import { DEMO_ADMIN_CREDENTIALS, DEMO_CREDENTIALS, DEMO_DRIVER_CREDENTIALS } from '../../utils/demoAuth';
 import { ecorouteImages } from '../../assets/ecorouteImages';
-import { getDashboardRoute } from '../../utils/roleRouting';
+import { getPostAuthRoute } from '../../utils/roleRouting';
 import OTPModal from './OTPModal';
 import TruckLoader from '../shared/TruckLoader';
 
 function CustomerLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user, login } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,12 +20,14 @@ function CustomerLoginPage() {
   const [showOTP, setShowOTP] = useState(false);
   const requestInFlightRef = useRef(false);
   const isLoading = Boolean(loadingAction);
+  const authIntent = location.state?.intent;
+  const pickupIntent = authIntent === 'pickup';
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(getDashboardRoute(user.role), { replace: true });
+      navigate(getPostAuthRoute(user.role, authIntent), { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [authIntent, isAuthenticated, user, navigate]);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -43,7 +46,7 @@ function CustomerLoginPage() {
         setError(result.error || 'Não foi possível entrar. Verifique os dados.');
         return;
       }
-      navigate(getDashboardRoute(result.user.role), { replace: true });
+      navigate(getPostAuthRoute(result.user.role, authIntent), { replace: true });
     } finally {
       requestInFlightRef.current = false;
       setLoadingAction(null);
@@ -133,9 +136,23 @@ function CustomerLoginPage() {
         {/* Right — Form panel */}
         <div className="md:w-1/2 bg-white flex flex-col justify-center px-10 sm:px-14 py-14 md:py-20">
           <h2 className="font-bold text-3xl text-primary mb-2">Entrar</h2>
-          <p className="text-primary/50 text-base mb-10">
+          <p className={`text-primary/50 text-base ${pickupIntent ? 'mb-5' : 'mb-10'}`}>
             Acesse sua conta para acompanhar coletas, valores e histórico
           </p>
+
+          {pickupIntent && (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-primary/10 bg-accent/60 p-4 text-primary">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+                <Truck className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">Entre para solicitar a coleta</p>
+                <p className="mt-1 text-xs leading-5 text-primary/60">
+                  Após o acesso como cliente, você seguirá diretamente para o formulário de solicitação.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-6">
             {/* Email */}
@@ -218,7 +235,7 @@ function CustomerLoginPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-primary">Perfis de apresentação</p>
                   <p className="mt-1 text-xs leading-relaxed text-primary/60">
-                    Cliente, prestador e administração com dados demonstrativos preenchidos.
+                    Cliente, coletor e administração com dados demonstrativos preenchidos.
                   </p>
                 </div>
               </div>
@@ -243,7 +260,7 @@ function CustomerLoginPage() {
                 >
                   <span className="inline-flex items-center gap-2">
                     <LockKeyhole className="h-4 w-4" />
-                    Prestador demo
+                    Coletor demo
                   </span>
                   <span className="text-xs font-medium text-primary/45">{DEMO_DRIVER_CREDENTIALS.email}</span>
                 </button>
@@ -284,6 +301,7 @@ function CustomerLoginPage() {
               Ainda não tem conta?{' '}
               <Link
                 to="/signup"
+                state={location.state}
                 className="font-semibold text-primary hover:text-brand-primary-hover transition-colors"
               >
                 Criar cadastro
@@ -298,6 +316,7 @@ function CustomerLoginPage() {
         isOpen={showOTP}
         onClose={() => setShowOTP(false)}
         email={email}
+        successPath={pickupIntent ? '/upload-waste' : undefined}
       />
     </div>
   );

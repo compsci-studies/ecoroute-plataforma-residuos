@@ -36,7 +36,7 @@ export function FAQ() {
 
   const faqs = [
     {
-      question: 'A EcoRoute e apenas um mapa?',
+      question: 'A EcoRoute é apenas um mapa?',
       answer:
         'Não. O mapa é uma função de apoio. A proposta principal é uma plataforma web para solicitar coleta, calcular taxa, gerar protocolo e gerenciar operações de resíduos urbanos.',
     },
@@ -46,7 +46,7 @@ export function FAQ() {
         'Sim. A plataforma trabalha com uma base de pontos oficiais para São Paulo e pode integrar fontes públicas como GeoSampa, prefeitura e iniciativas de reciclagem.',
     },
     {
-      question: 'Como a taxa de coleta e calculada?',
+      question: 'Como a taxa de coleta é calculada?',
       answer:
         'A estimativa considera material, peso, volume, complexidade da retirada e distância entre a base operacional e o endereço informado.',
     },
@@ -70,7 +70,7 @@ export function FAQ() {
             Perguntas frequentes
           </h2>
           <p className="font-['Outfit'] text-primary/60 text-lg">
-            Respostas diretas sobre a proposta e a parte pratica
+            Respostas diretas sobre a proposta e a parte prática
           </p>
         </div>
 

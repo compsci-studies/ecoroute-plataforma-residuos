@@ -10,8 +10,6 @@ import {
 } from "./demoAuth.js";
 import {
   DEMO_ADMIN_ANALYTICS,
-  DEMO_ADMIN_BILLING_CONFIGS,
-  DEMO_ADMIN_BILLING_OVERVIEW,
   DEMO_ADMIN_ML_ANALYTICS,
   DEMO_ADMIN_SCHEDULES,
 } from "./demoAdminData.js";
@@ -313,8 +311,8 @@ const DEMO_USERS = Object.freeze([
 ]);
 
 const DEMO_DRIVER_PICKUP = Object.freeze({
-  id: "demo-pickup-001",
-  _id: "demo-pickup-001",
+  id: "demo-pickup-4D1A11E2",
+  _id: "demo-pickup-4D1A11E2",
   customerName: "Cliente Demonstração",
   customerPhone: "(11) 4002-8922",
   customer: {
@@ -349,27 +347,126 @@ const DEMO_DRIVER_PICKUP = Object.freeze({
   },
 });
 
-const DEMO_CUSTOMER_BILLS = Object.freeze([
+const DEMO_PICKUP_PAYMENTS = Object.freeze([
   {
-    _id: "demo-bill-customer-001",
+    id: "demo-payment-001",
+    pickupId: "demo-pickup-4D1A11E2",
     amount: 148,
-    status: "unpaid",
-    paymentMethod: null,
-    dueDate: dateKey(4),
-    createdAt: dateKey(-1),
-    pickupId: "demo-pickup-001",
-    description: "Coleta residencial de recicláveis",
+    currency: "BRL",
+    method: "cash",
+    status: "PENDING",
+    createdAt: nowIso(),
+    paidAt: null,
+    customer: { id: DEMO_USER.id, name: DEMO_USER.name, email: DEMO_USER.email, phone: DEMO_USER.phone },
+    driver: { id: DEMO_DRIVER_USER.id, name: DEMO_DRIVER_USER.name, email: DEMO_DRIVER_USER.email },
+    organization: { id: DEMO_ORGANIZATIONS[0]._id, name: DEMO_ORGANIZATIONS[0].name },
+    pickup: {
+      id: "demo-pickup-4D1A11E2",
+      status: "ASSIGNED",
+      category: "recyclable",
+      level: "medium",
+      location: DEMO_DRIVER_PICKUP.location,
+    },
   },
   {
-    _id: "demo-bill-customer-002",
+    id: "demo-payment-002",
+    pickupId: "demo-pickup-7F42A1C9",
+    amount: 216,
+    currency: "BRL",
+    method: "pix",
+    status: "COMPLETED",
+    createdAt: dateKey(-1),
+    paidAt: dateKey(-1),
+    customer: { id: "demo-customer-002", name: "Condomínio Paulista", email: "financeiro@condominiopaulista.com.br" },
+    driver: { id: "demo-driver-002", name: "Mariana Lopes", email: "mariana.coletas@ecoroute.com.br" },
+    organization: { id: DEMO_ORGANIZATIONS[0]._id, name: DEMO_ORGANIZATIONS[0].name },
+    pickup: {
+      id: "demo-pickup-7F42A1C9",
+      status: "COMPLETED",
+      category: "both",
+      level: "hard",
+      location: { address: "Alameda Santos, 900 - Jardins, São Paulo - SP" },
+    },
+  },
+  {
+    id: "demo-payment-003",
+    pickupId: "demo-pickup-3B9D217E",
     amount: 92,
-    status: "paid",
-    paymentMethod: "cash",
+    currency: "BRL",
+    method: "cash",
+    status: "COMPLETED",
+    createdAt: dateKey(-3),
+    paidAt: dateKey(-2),
+    customer: { id: "demo-customer-003", name: "Mercado Santa Cecília", email: "operacoes@mercadosantacecilia.com.br" },
+    driver: { id: "demo-driver-003", name: "Rafael Nogueira", email: "rafael.rotas@ecoroute.com.br" },
+    organization: { id: DEMO_ORGANIZATIONS[1]._id, name: DEMO_ORGANIZATIONS[1].name },
+    pickup: {
+      id: "demo-pickup-3B9D217E",
+      status: "COMPLETED",
+      category: "recyclable",
+      level: "easy",
+      location: { address: "Rua das Palmeiras, 320 - Santa Cecília, São Paulo - SP" },
+    },
+  },
+  {
+    id: "demo-payment-004",
+    pickupId: "demo-pickup-0C65E8B4",
+    amount: 184,
+    currency: "BRL",
+    method: "pix",
+    status: "COMPLETED",
+    createdAt: dateKey(-5),
+    paidAt: dateKey(-5),
+    customer: { id: "demo-customer-004", name: "Clínica Ibirapuera", email: "administrativo@clinicaibirapuera.com.br" },
+    driver: { id: "demo-driver-004", name: "Paulo Mendes", email: "paulo.mendes@ecosul.com.br" },
+    organization: { id: DEMO_ORGANIZATIONS[2]._id, name: DEMO_ORGANIZATIONS[2].name },
+    pickup: {
+      id: "demo-pickup-0C65E8B4",
+      status: "COMPLETED",
+      category: "recyclable",
+      level: "medium",
+      location: { address: "Av. Ibirapuera, 1888 - Moema, São Paulo - SP" },
+    },
+  },
+  {
+    id: "demo-payment-005",
+    pickupId: "demo-pickup-91A6D20F",
+    amount: 126,
+    currency: "BRL",
+    method: "pix",
+    status: "FAILED",
+    createdAt: dateKey(-6),
+    paidAt: null,
+    customer: { id: "demo-customer-005", name: "Residencial Pinheiros", email: "sindico@residencialpinheiros.com.br" },
+    driver: null,
+    organization: { id: DEMO_ORGANIZATIONS[1]._id, name: DEMO_ORGANIZATIONS[1].name },
+    pickup: {
+      id: "demo-pickup-91A6D20F",
+      status: "PAYMENT_REQUIRED",
+      category: "both",
+      level: "medium",
+      location: { address: "Rua Cardeal Arcoverde, 1410 - Pinheiros, São Paulo - SP" },
+    },
+  },
+  {
+    id: "demo-payment-006",
+    pickupId: "demo-pickup-5E42B80A",
+    amount: 74,
+    currency: "BRL",
+    method: "cash",
+    status: "COMPLETED",
+    createdAt: dateKey(-8),
     paidAt: dateKey(-8),
-    dueDate: dateKey(-5),
-    createdAt: dateKey(-11),
-    pickupId: "demo-pickup-previous",
-    description: "Retirada de papelão e plásticos",
+    customer: { id: "demo-customer-006", name: "Café Bela Vista", email: "contato@cafebelavista.com.br" },
+    driver: { id: DEMO_DRIVER_USER.id, name: DEMO_DRIVER_USER.name, email: DEMO_DRIVER_USER.email },
+    organization: { id: DEMO_ORGANIZATIONS[0]._id, name: DEMO_ORGANIZATIONS[0].name },
+    pickup: {
+      id: "demo-pickup-5E42B80A",
+      status: "COMPLETED",
+      category: "recyclable",
+      level: "easy",
+      location: { address: "Rua Pamplona, 640 - Bela Vista, São Paulo - SP" },
+    },
   },
 ]);
 
@@ -533,8 +630,8 @@ const DEMO_PICKUP_ANALYTICS = Object.freeze({
 const DEMO_HISTORY_PICKUPS = Object.freeze([
   {
     ...DEMO_DRIVER_PICKUP,
-    _id: "demo-history-001",
-    id: "demo-history-001",
+    _id: "demo-history-5A72C0F1",
+    id: "demo-history-5A72C0F1",
     status: "COMPLETED",
     category: "recyclable",
     level: "medium",
@@ -548,13 +645,15 @@ const DEMO_HISTORY_PICKUPS = Object.freeze([
     createdAt: dateKey(-2),
     assignedAt: dateKey(-2),
     completedAt: dateKey(-1),
+    paymentMethod: "pix",
+    paymentStatus: "PAID",
     responseTimeMs: 18 * 60 * 1000,
     taskDurationMs: 108 * 60 * 1000,
   },
   {
     ...DEMO_DRIVER_PICKUP,
-    _id: "demo-history-002",
-    id: "demo-history-002",
+    _id: "demo-history-A990B2D4",
+    id: "demo-history-A990B2D4",
     category: "mixed",
     level: "hard",
     status: "CANCELLED",
@@ -572,6 +671,26 @@ const DEMO_HISTORY_PICKUPS = Object.freeze([
     completedAt: null,
     responseTimeMs: 26 * 60 * 1000,
     taskDurationMs: null,
+  },
+  {
+    ...DEMO_DRIVER_PICKUP,
+    _id: "demo-history-C13F48E7",
+    id: "demo-history-C13F48E7",
+    status: "PAYMENT_REQUIRED",
+    category: "recyclable",
+    level: "easy",
+    area: "Vila Mariana",
+    location: {
+      latitude: -23.5892,
+      longitude: -46.6344,
+      address: "Rua Vergueiro, 3100 - Vila Mariana, São Paulo - SP",
+    },
+    estimatedPrice: 86,
+    paymentMethod: null,
+    paymentStatus: "UNPAID",
+    createdAt: dateKey(-1),
+    assignedAt: null,
+    completedAt: null,
   },
 ]);
 
@@ -669,16 +788,6 @@ function withPagination(items, searchParams) {
   return pagination(items, page, limit);
 }
 
-function payableBill(id, method = "cash") {
-  const target = DEMO_CUSTOMER_BILLS.find((bill) => bill._id === id) || DEMO_CUSTOMER_BILLS[0];
-  return {
-    ...target,
-    status: "paid",
-    paymentMethod: method,
-    paidAt: nowIso(),
-  };
-}
-
 function pickupWithStatus(status = null) {
   const pickup = { ...DEMO_DRIVER_PICKUP };
   if (status) pickup.status = status;
@@ -741,6 +850,10 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
     })) });
   }
 
+  if (method === "get" && pathname === "/ml-schedule/health") {
+    return demoResponse({ data: { status: "ok", mode: "demonstration" } });
+  }
+
   if (method === "get" && pathname.startsWith("/ml-schedule/")) {
     const schedule = DEMO_ADMIN_SCHEDULES.find((item) => item._id === pathname.split("/")[2]) || DEMO_ADMIN_SCHEDULES[0];
     return demoResponse({ data: schedule });
@@ -748,64 +861,6 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
 
   if (method === "get" && pathname === "/ml-schedule") {
     return demoResponse({ data: DEMO_ADMIN_SCHEDULES, pagination: withPagination(DEMO_ADMIN_SCHEDULES, searchParams) });
-  }
-
-  if (method === "get" && pathname === "/billing/my-bills") {
-    return demoResponse({
-      bills: DEMO_CUSTOMER_BILLS,
-      summary: {
-        totalOutstanding: 148,
-        totalPaid: 92,
-        unpaid: 1,
-        paid: 1,
-        overdue: 0,
-      },
-    });
-  }
-
-  if (method === "post" && pathname.startsWith("/billing/pay/")) {
-    return demoResponse({ success: true, bill: payableBill(pathname.split("/").pop(), body.method) });
-  }
-
-  if (method === "get" && pathname === "/billing/history") {
-    return demoResponse({
-      history: DEMO_CUSTOMER_BILLS.filter((bill) => bill.status === "paid").map((bill) => ({
-        ...bill,
-        paidAt: bill.paidAt || dateKey(-1),
-      })),
-    });
-  }
-
-  if (method === "get" && pathname === "/billing/admin/overview") {
-    return demoResponse(DEMO_ADMIN_BILLING_OVERVIEW);
-  }
-
-  if (method === "get" && pathname.startsWith("/billing/admin/accounts/")) {
-    return demoResponse({
-      bills: DEMO_ADMIN_BILLING_OVERVIEW.bills,
-      account: DEMO_ADMIN_BILLING_OVERVIEW.accounts[0],
-      summary: DEMO_ADMIN_BILLING_OVERVIEW.summary,
-      pagination: DEMO_ADMIN_BILLING_OVERVIEW.pagination,
-    });
-  }
-
-  if (method === "get" && pathname === "/billing/config") {
-    const configItem = DEMO_ADMIN_BILLING_CONFIGS[0];
-    return demoResponse({
-      configs: DEMO_ADMIN_BILLING_CONFIGS,
-      activeFees: {
-        customerFee: configItem.customerMonthlyFee,
-        adminFee: configItem.adminMonthlyFee,
-      },
-      defaults: {
-        customerFee: configItem.customerMonthlyFee,
-        adminFee: configItem.adminMonthlyFee,
-      },
-    });
-  }
-
-  if (method === "put" && pathname === "/billing/config") {
-    return demoResponse({ success: true, config: { ...DEMO_ADMIN_BILLING_CONFIGS[0], ...body } });
   }
 
   if (method === "get" && pathname === "/pricing-config") {
@@ -821,7 +876,25 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
   }
 
   if (method === "get" && pathname === "/pickups/my-pickups") {
-    return demoResponse({ pickups: DEMO_HISTORY_PICKUPS, activePickup: { ...DEMO_DRIVER_PICKUP } });
+    return demoResponse({
+      pickups: DEMO_HISTORY_PICKUPS,
+      activePickup: { ...DEMO_DRIVER_PICKUP },
+      stats: {
+        total: DEMO_HISTORY_PICKUPS.length,
+        totalSpent: 148,
+        statusCounts: { COMPLETED: 1, CANCELLED: 1, PAYMENT_REQUIRED: 1 },
+        categoryCounts: { recyclable: 2, mixed: 1 },
+        levelCounts: { easy: 1, medium: 1, hard: 1 },
+        monthly: [
+          {
+            month: dateKey(0).slice(0, 7),
+            created: DEMO_HISTORY_PICKUPS.length,
+            completed: 1,
+            cancelled: 1,
+          },
+        ],
+      },
+    });
   }
 
   if (method === "get" && pathname === "/pickups/active") {
@@ -890,6 +963,33 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
     return demoResponse({ success: true, pickup: pickupWithStatus("CANCELLED") });
   }
 
+  if (method === "post" && pathname === "/payments/initiate") {
+    const pickup =
+      DEMO_HISTORY_PICKUPS.find(
+        (item) => String(item.id || item._id) === String(body.pickupId),
+      ) || DEMO_DRIVER_PICKUP;
+    const paymentCompleted = body.method === "pix";
+    return demoResponse({
+      success: true,
+      method: body.method,
+      payment: {
+        id: `demo-payment-${body.pickupId}`,
+        pickupId: body.pickupId,
+        amount: pickup.estimatedPrice || pickup.price,
+        currency: pickup.currency || "BRL",
+        method: body.method,
+        status: paymentCompleted ? "COMPLETED" : "PENDING",
+        paidAt: paymentCompleted ? nowIso() : null,
+      },
+      pickup: {
+        id: body.pickupId,
+        status: "PENDING",
+        paymentMethod: body.method,
+        paymentStatus: paymentCompleted ? "PAID" : "PENDING",
+      },
+    });
+  }
+
   if (method === "post" && /^\/payments\/[^/]+\/cash-collected$/.test(pathname)) {
     return demoResponse({
       success: true,
@@ -900,6 +1000,27 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
 
   if (method === "get" && pathname.startsWith("/payments/pickup/")) {
     return demoResponse({ payment: { status: "PENDING", method: "cash", amount: DEMO_DRIVER_PICKUP.price } });
+  }
+
+  if (method === "get" && pathname === "/payments/all") {
+    const paymentMethod = searchParams.get("method");
+    const paymentStatus = searchParams.get("status");
+    const payments = DEMO_PICKUP_PAYMENTS.filter((payment) => {
+      if (paymentMethod && payment.method !== paymentMethod) return false;
+      if (paymentStatus && payment.status !== paymentStatus) return false;
+      return true;
+    });
+    const totals = ["pix", "cash"].map((paymentMethodKey) => {
+      const completed = payments.filter(
+        (payment) => payment.method === paymentMethodKey && payment.status === "COMPLETED"
+      );
+      return {
+        _id: paymentMethodKey,
+        total: completed.reduce((sum, payment) => sum + payment.amount, 0),
+        count: completed.length,
+      };
+    });
+    return demoResponse({ payments, totals });
   }
 
   if (method === "get" && pathname === "/driver/me") {
@@ -1083,8 +1204,7 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
     pathname.startsWith("/org-admin/drivers") ||
     pathname.startsWith("/org-admin/admins") ||
     pathname.startsWith("/super-admin/admins") ||
-    pathname.startsWith("/org-admin/deletion-requests") ||
-    pathname.startsWith("/billing/admin")
+    pathname.startsWith("/org-admin/deletion-requests")
   )) {
     return demoResponse({ success: true, data: body });
   }

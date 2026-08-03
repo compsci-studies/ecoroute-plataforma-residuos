@@ -113,7 +113,7 @@ const Vehicles = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-primary">Gestão de veículos</h1>
-          <p className="text-sm text-primary/50 mt-1">{isSuperAdmin ? "Gerencie veículos de todas as cooperativas" : "Gerencie a frota da sua organização"}</p>
+          <p className="text-sm text-primary/50 mt-1">{isSuperAdmin ? "Gerencie os veículos de todos os operadores parceiros" : "Gerencie a frota do seu operador"}</p>
         </div>
         <button onClick={() => { setShowAddModal(true); setFormError(""); }} className="px-5 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition-colors flex items-center gap-2 self-start sm:self-auto">
           <span className="text-lg leading-none">+</span> Novo veículo
@@ -142,7 +142,7 @@ const Vehicles = () => {
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Placa</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Capacidade</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Status</th>
-                  {isSuperAdmin && <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Organização</th>}
+                  {isSuperAdmin && <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Operador parceiro</th>}
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Coletor vinculado</th>
                   <th className="px-5 py-3.5 text-xs font-semibold text-primary/50 uppercase tracking-wider">Ações</th>
                 </tr>
@@ -224,7 +224,7 @@ const Vehicles = () => {
                 )}
               </div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Placa</label><input type="text" value={form.licensePlate} onChange={e => setForm({...form, licensePlate: e.target.value})} placeholder="ex. ECO4R26" className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
-              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Organização</label><select value={form.orgId} onChange={e => setForm({...form, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar organização...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
+              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Operador parceiro</label><select value={form.orgId} onChange={e => setForm({...form, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar operador...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
               {formError && <p className="text-red-500 text-sm">{formError}</p>}
               <button type="submit" disabled={submitting} className="w-full py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary/90 transition disabled:opacity-50">{submitting ? "Adicionando..." : "Adicionar veículo"}</button>
             </form>
@@ -252,7 +252,7 @@ const Vehicles = () => {
                 )}
               </div>
               <div><label className="block text-sm font-medium text-primary/60 mb-1">Placa</label><input type="text" value={editForm.licensePlate} onChange={e => setEditForm({...editForm, licensePlate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm" /></div>
-              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Organização</label><select value={editForm.orgId} onChange={e => setEditForm({...editForm, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar organização...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
+              {isSuperAdmin && <div><label className="block text-sm font-medium text-primary/60 mb-1">Operador parceiro</label><select value={editForm.orgId} onChange={e => setEditForm({...editForm, orgId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white text-sm"><option value="">Selecionar operador...</option>{orgs.map(o => <option key={o._id} value={o._id}>{o.name}</option>)}</select></div>}
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-primary/60">Disponível</label>
                 <button type="button" onClick={() => setEditForm({...editForm, isAvailable: !editForm.isAvailable})} className={`w-12 h-6 rounded-full transition-colors ${editForm.isAvailable ? "bg-emerald-400" : "bg-gray-300"} relative`}>
@@ -301,7 +301,7 @@ const Vehicles = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200"><p className="text-sm text-amber-700">Isto envia uma solicitação para aprovação do super administrador.</p></div>
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200"><p className="text-sm text-amber-700">Isto envia uma solicitação para aprovação da administração da plataforma.</p></div>
                 <div><label className="block text-sm font-medium text-primary/60 mb-1">Justificativa da exclusão *</label><textarea value={deleteReason} onChange={e => setDeleteReason(e.target.value)} rows={3} placeholder="Explique por que este veículo deve ser removido..." className="w-full px-4 py-2.5 rounded-xl border border-primary/12 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none text-sm" /></div>
                 {formError && <p className="text-red-500 text-sm">{formError}</p>}
                 <button onClick={handleDelete} disabled={submitting} className="w-full py-2.5 bg-amber-500 text-white font-semibold text-sm rounded-xl hover:bg-amber-600 transition disabled:opacity-50">{submitting ? "Enviando..." : "Enviar solicitação"}</button>

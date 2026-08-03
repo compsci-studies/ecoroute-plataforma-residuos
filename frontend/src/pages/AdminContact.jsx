@@ -10,8 +10,8 @@ const STATUS_LABELS = {
 
 const ROLE_LABELS = {
   super_admin: "gestão geral",
-  admin: "cooperativa",
-  org_admin: "cooperativa",
+  admin: "operador parceiro",
+  org_admin: "operador parceiro",
   driver: "coletor",
   customer: "cliente",
 };
@@ -111,7 +111,7 @@ export default function AdminContact() {
         <div>
           <h1 className="text-2xl font-bold text-primary">Contato com suporte</h1>
           <p className="text-sm text-primary/50 mt-1">
-            Envie dúvidas, problemas da cooperativa ou solicitações do painel para a gestão EcoRoute.
+            Envie dúvidas, problemas da operação ou solicitações do painel para a administração EcoRoute.
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export default function AdminContact() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-primary">Mensagens de contato</h1>
-          <p className="text-sm text-primary/50 mt-1">Revise solicitações de clientes, cooperativas e suporte operacional.</p>
+          <p className="text-sm text-primary/50 mt-1">Revise solicitações de clientes, operadores parceiros e suporte operacional.</p>
         </div>
         <button
           onClick={fetchMessages}
@@ -204,7 +204,7 @@ export default function AdminContact() {
               const personName = message.userId?.name || message.name || "Pessoa não identificada";
               const personEmail = message.userId?.email || message.email || "";
               const role = message.userId?.role || message.role;
-              const orgName = message.orgId?.name || message.orgName || "Sem cooperativa";
+              const orgName = message.orgId?.name || message.orgName || "Sem operador vinculado";
 
               return (
                 <div key={message._id} className="p-5">
@@ -221,7 +221,7 @@ export default function AdminContact() {
                           Pessoa: {personName}{role ? ` (${ROLE_LABELS[role] || role.replace("_", " ")})` : ""}
                         </span>
                         <span className="rounded-full bg-primary/5 px-2.5 py-1 font-medium text-primary/60">
-                          Cooperativa: {orgName}
+                          Operador: {orgName}
                         </span>
                       </div>
                       {personEmail && <p className="text-sm text-primary/50 mt-2">{personEmail}</p>}

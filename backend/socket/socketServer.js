@@ -32,18 +32,18 @@ export function initSocket(httpServer) {
                 socket.handshake.auth?.token ||
                 socket.handshake.headers?.authorization?.split(" ")[1];
 
-            if (!token) return next(new Error("Authentication required"));
+            if (!token) return next(new Error("Autenticação necessária"));
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const user = await User.findById(decoded.userId).select("name email role phone orgId");
 
-            if (!user) return next(new Error("User not found"));
+            if (!user) return next(new Error("Usuário não encontrado"));
 
             socket.user = user; // attach user to socket for later use
             next();
         } catch (err) {
             metrics.increment("socket_auth_failures_total");
-            next(new Error("Invalid or expired token"));
+            next(new Error("Token inválido ou expirado"));
         }
     });
 

@@ -88,14 +88,6 @@ export function buildPagSeguroPixInitiationPayload({ amount, pickupId }) {
   });
 }
 
-export function buildPagSeguroPixBillingPayload({ amount, billingId }) {
-  return buildPayload({
-    amount,
-    transactionUuid: `PIX-BILL-${billingId}-${randomUUID()}`,
-    successPath: "/api/billing/pix/success",
-  });
-}
-
 export function decodeAndVerifyCallback(base64Data) {
   const { secretKey } = getConfig();
 

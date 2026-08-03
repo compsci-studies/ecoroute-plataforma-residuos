@@ -24,8 +24,8 @@ const ROLES = [
   { value: "", label: "Todos os perfis" },
   { value: "customer_admin", label: "Cliente" },
   { value: "driver", label: "Coletor" },
-  { value: "admin", label: "Administrador" },
-  { value: "super_admin", label: "Super administrador" },
+  { value: "admin", label: "Gestor da operação" },
+  { value: "super_admin", label: "Administrador da plataforma" },
 ];
 
 const STATUSES = [
@@ -42,8 +42,8 @@ const ROLE_STYLES = {
 };
 
 const ROLE_LABELS = {
-  super_admin: "Super administrador",
-  admin: "Administrador",
+  super_admin: "Administrador da plataforma",
+  admin: "Gestor da operação",
   driver: "Coletor",
   customer_admin: "Cliente",
 };
@@ -147,11 +147,11 @@ const Users = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-primary">Gestão de usuários</h1>
+        <h1 className="text-2xl font-bold text-primary">Contas e acessos</h1>
         <p className="text-sm text-primary/50 mt-1">
           {isOrgAdmin
-            ? "Consulte e gerencie usuários vinculados a sua organização"
-            : "Consulte e gerencie todos os usuários cadastrados na plataforma"}
+            ? "Consulte clientes, coletores e gestores vinculados ao seu operador."
+            : "Cadastro central de clientes, coletores, gestores e administradores da plataforma."}
         </p>
       </div>
 
@@ -159,14 +159,14 @@ const Users = () => {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <StatsCard
-            title="Usuários totais"
+            title="Contas totais"
             value={stats.total}
             label="Contas cadastradas"
             icon={<UsersIcon className="w-5 h-5 text-primary" />}
             iconBg="bg-primary/8"
           />
           <StatsCard
-            title="Usuários ativos"
+            title="Contas ativas"
             value={stats.active}
             label="Acesso liberado"
             icon={<UserCheck className="w-5 h-5 text-emerald-600" />}
@@ -430,7 +430,7 @@ const Users = () => {
               <DetailRow icon={<Phone className="w-4 h-4 text-primary/50" />} label="Telefone" value={viewUser.phone || "Não informado"} />
               <DetailRow
                 icon={<Building2 className="w-4 h-4 text-primary/50" />}
-                label="Organização"
+                label="Operador parceiro"
                 value={viewUser.organization?.name || "Nenhuma"}
               />
               <DetailRow

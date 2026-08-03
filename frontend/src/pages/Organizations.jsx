@@ -154,26 +154,26 @@ const Organizations = () => {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">Cooperativas</h1>
-          <p className="text-sm text-primary/60 mt-1">Gerencie cooperativas parceiras, frota, administradores e bases operacionais</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">Operadores parceiros</h1>
+          <p className="text-sm text-primary/60 mt-1">Cada operador é uma cooperativa ou empresa prestadora que reúne sua base, gestores, coletores e frota.</p>
         </div>
         <button onClick={() => { setShowCreate(true); setFormError(""); }} className="px-5 py-2.5 bg-primary text-white font-semibold rounded-xl shadow-sm hover:shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
           <Plus className="h-5 w-5" />
-          Nova cooperativa
+          Novo operador
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatsCard
-          title="Cooperativas"
+          title="Operadores"
           value={totalOrganizations}
           label="Parceiras cadastradas"
           icon={<Building2 className="w-5 h-5 text-primary" />}
           iconBg="bg-primary/8"
         />
         <StatsCard
-          title="Administradores"
+          title="Gestores"
           value={totalAdmins}
           label="Responsáveis operacionais"
           icon={<UserRoundCog className="w-5 h-5 text-blue-600" />}
@@ -204,7 +204,7 @@ const Organizations = () => {
       ) : error ? (
         <AdminErrorState message={error} onRetry={() => fetchOrganizations({ page: pagination?.page || 1, limit: 10 })} />
       ) : organizations.length === 0 ? (
-        <AdminEmptyState icon={Building2} title="Nenhuma cooperativa cadastrada" message="Cadastre a primeira cooperativa para vincular administradores, frota e coletores." />
+        <AdminEmptyState icon={Building2} title="Nenhum operador cadastrado" message="Cadastre a primeira cooperativa ou empresa prestadora para vincular gestores, frota e coletores." />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -262,7 +262,7 @@ const Organizations = () => {
                       </span>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-2.5 py-1 text-[11px] font-bold text-primary/55">
                         <Building2 className="h-3.5 w-3.5" />
-                        Cooperativa parceira
+                        Operador parceiro
                       </span>
                     </div>
 
@@ -282,11 +282,11 @@ const Organizations = () => {
                             )}
                           </div>
                           <span className="truncate text-xs font-medium text-primary/45">
-                            {admins.length} admin{admins.length !== 1 ? "s" : ""}
+                            {admins.length} gestor{admins.length !== 1 ? "es" : ""}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs font-medium text-primary/40">Sem administradores</span>
+                        <span className="text-xs font-medium text-primary/40">Sem gestores</span>
                       )}
                       <span className="shrink-0 text-xs font-bold text-primary/40">
                         {trucks} veículo{trucks !== 1 ? "s" : ""}
@@ -298,7 +298,7 @@ const Organizations = () => {
                     <div>
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-primary/45">Indicadores da cooperativa</p>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-primary/45">Indicadores do operador</p>
                           <h3 className="truncate text-base font-bold text-primary">{org.name}</h3>
                         </div>
                         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.soft} ${tone.text}`}>
@@ -306,7 +306,7 @@ const Organizations = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        <OrgMetric icon={<UserRoundCog className="h-4 w-4" />} label="Admins" value={admins.length} />
+                        <OrgMetric icon={<UserRoundCog className="h-4 w-4" />} label="Gestores" value={admins.length} />
                         <OrgMetric icon={<Truck className="h-4 w-4" />} label="Veículos" value={trucks} />
                         <OrgMetric icon={<UsersRound className="h-4 w-4" />} label="Coletores" value={drivers} />
                       </div>
@@ -321,15 +321,15 @@ const Organizations = () => {
                       </button>
                       <button
                         aria-label={`Editar ${org.name}`}
-                        title="Editar cooperativa"
+                        title="Editar operador"
                         onClick={(e) => { e.stopPropagation(); openEditOrganization(org); }}
                         className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5 text-primary/65 transition hover:bg-primary/10 hover:text-primary"
                       >
                         <Edit3 className="h-4 w-4" />
                       </button>
                       <button
-                        aria-label={`Adicionar admin a ${org.name}`}
-                        title="Adicionar admin"
+                        aria-label={`Adicionar gestor a ${org.name}`}
+                        title="Adicionar gestor"
                         onClick={(e) => { e.stopPropagation(); openAddAdmin(org); }}
                         className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-500/15 bg-blue-500/10 text-blue-600 transition hover:bg-blue-500/15"
                       >
@@ -345,7 +345,7 @@ const Organizations = () => {
           <PaginationControls
             pagination={pagination}
             onPageChange={(nextPage) => fetchOrganizations({ page: nextPage, limit: 10 })}
-            itemLabel="cooperativas"
+            itemLabel="operadores"
           />
         </>
       )}
@@ -355,11 +355,11 @@ const Organizations = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 relative">
             <button onClick={() => setShowCreate(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary/60 hover:bg-primary/10 transition">&#x2715;</button>
-            <h2 className="text-xl font-bold text-primary mb-6">Cadastrar cooperativa</h2>
+            <h2 className="text-xl font-bold text-primary mb-6">Cadastrar operador parceiro</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-primary/70 mb-1">Nome da cooperativa</label>
-                <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="ex. Coop Pinheiros" className="w-full px-4 py-2.5 rounded-xl border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <label className="block text-sm font-medium text-primary/70 mb-1">Nome do operador</label>
+                <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="Ex.: Cooperativa Pinheiros" className="w-full px-4 py-2.5 rounded-xl border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               <Suspense fallback={<MapFallback />}>
                 <LocationPickerMap
@@ -373,7 +373,7 @@ const Organizations = () => {
               </Suspense>
               {formError && <p className="text-red-500 text-sm font-medium">{formError}</p>}
               <button type="submit" disabled={submitting} className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition disabled:opacity-50">
-                {submitting ? "Cadastrando..." : "Cadastrar cooperativa"}
+                {submitting ? "Cadastrando..." : "Cadastrar operador"}
               </button>
             </form>
           </div>
@@ -385,10 +385,10 @@ const Organizations = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-8 relative">
             <button onClick={() => setEditOrg(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary/60 hover:bg-primary/10 transition">&#x2715;</button>
-            <h2 className="text-xl font-bold text-primary mb-6">Editar cooperativa</h2>
+            <h2 className="text-xl font-bold text-primary mb-6">Editar operador</h2>
             <form onSubmit={handleEdit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-primary/70 mb-1">Nome da cooperativa</label>
+                <label className="block text-sm font-medium text-primary/70 mb-1">Nome do operador</label>
                 <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               <Suspense fallback={<MapFallback />}>
@@ -415,8 +415,8 @@ const Organizations = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
             <button onClick={() => setAdminOrg(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary/60 hover:bg-primary/10 transition">&#x2715;</button>
-            <h2 className="text-xl font-bold text-primary mb-2">Adicionar administrador</h2>
-            <p className="text-sm text-primary/60 mb-6">Cooperativa: <strong>{adminOrg.name}</strong></p>
+            <h2 className="text-xl font-bold text-primary mb-2">Adicionar gestor da operação</h2>
+            <p className="text-sm text-primary/60 mb-6">Operador parceiro: <strong>{adminOrg.name}</strong></p>
             <form onSubmit={handleAddAdmin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-primary/70 mb-1">Nome completo</label>
@@ -424,7 +424,7 @@ const Organizations = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-primary/70 mb-1">Email</label>
-                <input type="email" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} placeholder="admin@ecoroute.local" className="w-full px-4 py-2.5 rounded-xl border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent" />
+                <input type="email" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} placeholder="gestao@operador.com.br" className="w-full px-4 py-2.5 rounded-xl border border-primary/15 focus:outline-none focus:ring-2 focus:ring-accent" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-primary/70 mb-1">Telefone</label>
@@ -436,7 +436,7 @@ const Organizations = () => {
               </div>
               {formError && <p className="text-red-500 text-sm font-medium">{formError}</p>}
               <button type="submit" disabled={submitting} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition disabled:opacity-50">
-                {submitting ? "Adicionando..." : "Adicionar administrador"}
+                {submitting ? "Adicionando..." : "Adicionar gestor"}
               </button>
             </form>
           </div>

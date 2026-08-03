@@ -10,37 +10,37 @@ export class AppError extends Error {
 }
 
 export class BadRequestError extends AppError {
-  constructor(message = "Bad request", details = undefined) {
+  constructor(message = "Solicitação inválida", details = undefined) {
     super(message, 400, details);
   }
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message = "Authentication required", details = undefined) {
+  constructor(message = "Autenticação necessária", details = undefined) {
     super(message, 401, details);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = "Access denied", details = undefined) {
+  constructor(message = "Acesso negado", details = undefined) {
     super(message, 403, details);
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = "Resource not found", details = undefined) {
+  constructor(message = "Recurso não encontrado", details = undefined) {
     super(message, 404, details);
   }
 }
 
 export class ConflictError extends AppError {
-  constructor(message = "Conflict", details = undefined) {
+  constructor(message = "Conflito", details = undefined) {
     super(message, 409, details);
   }
 }
 
 export class ServiceUnavailableError extends AppError {
-  constructor(message = "Service unavailable", details = undefined) {
+  constructor(message = "Serviço indisponível", details = undefined) {
     super(message, 503, details);
   }
 }

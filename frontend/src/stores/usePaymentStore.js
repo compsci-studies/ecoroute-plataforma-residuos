@@ -24,7 +24,7 @@ const usePaymentStore = create((set) => ({
       const res = await api.post("/payments/initiate", { pickupId, method });
       set({ loading: false, lastPayment: res.data.payment });
 
-      if (method === "pix") {
+      if (method === "pix" && res.data.actionUrl && res.data.formFields) {
         // Build a hidden form and submit it to Pix's checkout URL.
         // The browser is redirected; Pix will later redirect back to our
         // success/failure URLs which the backend handles.
@@ -51,7 +51,7 @@ const usePaymentStore = create((set) => ({
         err.response?.data?.error ||
         err.response?.data?.message ||
         err.message ||
-        "Failed to initiate payment";
+        "Não foi possível iniciar o pagamento";
       set({ loading: false, error: message });
       return { success: false, error: message };
     }

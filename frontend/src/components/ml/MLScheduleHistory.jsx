@@ -192,10 +192,10 @@ const MLScheduleHistory = () => {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-primary tracking-tight">
-            Histórico da agenda inteligente
+            Histórico de planejamentos de rota
           </h1>
           <p className="text-sm text-primary/60 mt-1">
-            Roteiros de coleta gerados pela IA e pelo fallback operacional
+            Planos sugeridos pelo motor de otimização ou pela estratégia de contingência
           </p>
         </div>
 
@@ -225,7 +225,7 @@ const MLScheduleHistory = () => {
       {/* Loading */}
       {loading && (
         <div className="text-center py-12">
-          <TruckLoader text="Carregando histórico da agenda..." />
+          <TruckLoader text="Carregando histórico de planejamentos..." />
         </div>
       )}
 
@@ -287,7 +287,7 @@ const MLScheduleHistory = () => {
           <PaginationControls
             pagination={schedulePagination}
             onPageChange={setPage}
-            itemLabel="agendas"
+            itemLabel="planejamentos"
           />
         </div>
       )}
@@ -297,12 +297,12 @@ const MLScheduleHistory = () => {
         <div className="text-center py-16">
           <p className="text-5xl mb-4">📋</p>
           <h3 className="text-lg font-semibold text-primary/70 mb-2">
-            Nenhuma agenda encontrada
+            Nenhum planejamento encontrado
           </h3>
           <p className="text-sm text-primary/50">
             {statusFilter
-              ? `Nenhuma agenda com status "${STATUS_BADGES[statusFilter]?.label || statusFilter}". Tente outro filtro.`
-              : "Gere a primeira agenda inteligente na página Agenda IA."}
+              ? `Nenhum planejamento com status "${STATUS_BADGES[statusFilter]?.label || statusFilter}". Tente outro filtro.`
+              : "Gere o primeiro planejamento na página Planejamento de rotas."}
           </p>
         </div>
       )}

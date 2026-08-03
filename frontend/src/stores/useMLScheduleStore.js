@@ -26,7 +26,7 @@ const useMLScheduleStore = create((set, get) => ({
             set({ publicSchedule: data, loading: false });
         } catch (error) {
             console.error("Failed to fetch public schedule:", error);
-            const errorMessage = error.response?.data?.message || error.message || "Failed to fetch schedule";
+            const errorMessage = error.response?.data?.message || error.message || "Não foi possível carregar o planejamento";
             set({
                 error: errorMessage,
                 loading: false,
@@ -52,7 +52,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to generate ML schedule:", error);
             set({
-                error: error.response?.data?.message || "Failed to generate schedule. Is the ML service running?",
+                error: error.response?.data?.message || "Não foi possível gerar o planejamento. Verifique o serviço de otimização.",
                 loading: false,
             });
             return null;
@@ -96,7 +96,7 @@ const useMLScheduleStore = create((set, get) => ({
             if (isAbortError(error)) return;
             console.error("Failed to fetch ML schedules:", error);
             set({
-                error: error.response?.data?.message || "Failed to fetch schedules",
+                error: error.response?.data?.message || "Não foi possível carregar os planejamentos",
                 loading: false,
             });
         }
@@ -114,7 +114,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to fetch ML schedule:", error);
             set({
-                error: error.response?.data?.message || "Failed to fetch schedule",
+                error: error.response?.data?.message || "Não foi possível carregar o planejamento",
                 loading: false,
             });
         }
@@ -135,7 +135,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to confirm ML schedule:", error);
             set({
-                error: error.response?.data?.message || "Failed to confirm schedule",
+                error: error.response?.data?.message || "Não foi possível confirmar o planejamento",
                 loading: false,
             });
             return null;
@@ -155,7 +155,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to predict waste:", error);
             set({
-                error: error.response?.data?.message || "Failed to predict waste volume",
+                error: error.response?.data?.message || "Não foi possível prever o volume de resíduos",
                 loading: false,
             });
             return null;
@@ -190,7 +190,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to fetch driver assignments:", error);
             set({
-                error: error.response?.data?.message || "Failed to fetch assignments",
+                error: error.response?.data?.message || "Não foi possível carregar as rotas atribuídas",
                 loading: false,
             });
         }
@@ -209,7 +209,7 @@ const useMLScheduleStore = create((set, get) => ({
             set({ mlAnalytics: response.data.data, loading: false });
         } catch (error) {
             set({
-                error: error.response?.data?.message || "Failed to fetch analytics",
+                error: error.response?.data?.message || "Não foi possível carregar os indicadores",
                 loading: false,
             });
         }
@@ -230,7 +230,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to redispatch area:", error);
             set({
-                error: error.response?.data?.message || "Failed to redispatch area",
+                error: error.response?.data?.message || "Não foi possível reprocessar a área",
                 loading: false,
             });
             return null;
@@ -253,7 +253,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to complete assignment:", error);
             set({
-                error: error.response?.data?.message || "Failed to mark assignment as completed",
+                error: error.response?.data?.message || "Não foi possível concluir a rota atribuída",
                 loading: false,
             });
             return null;
@@ -270,7 +270,7 @@ const useMLScheduleStore = create((set, get) => ({
         } catch (error) {
             console.error("Failed to fetch completions:", error);
             set({
-                error: error.response?.data?.message || "Failed to fetch completion history",
+                error: error.response?.data?.message || "Não foi possível carregar o histórico de conclusões",
                 loading: false,
             });
         }

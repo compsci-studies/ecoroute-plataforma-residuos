@@ -41,7 +41,7 @@ const usePickupStore = create((set, get) => ({
             set({ estimate: res.data, estimateLoading: false });
             return { success: true, data: res.data };
         } catch (err) {
-            const message = err.response?.data?.message || err.message || "Failed to get estimate";
+            const message = err.response?.data?.message || err.message || "Não foi possível calcular a estimativa";
             set({ estimateLoading: false, estimateError: message });
             return { success: false, error: message };
         }
@@ -96,7 +96,7 @@ const usePickupStore = create((set, get) => ({
             set({ currentPickup: pickup, loading: false });
             return { success: true, pickup };
         } catch (err) {
-            const message = err.response?.data?.message || err.message || "Failed to create pickup";
+            const message = err.response?.data?.message || err.message || "Não foi possível criar a solicitação de coleta";
             set({ loading: false, error: message });
             return { success: false, error: message };
         }
@@ -109,7 +109,7 @@ const usePickupStore = create((set, get) => ({
             set({ currentPickup: null, loading: false });
             return { success: true };
         } catch (err) {
-            const message = err.response?.data?.message || err.message || "Failed to cancel pickup";
+            const message = err.response?.data?.message || err.message || "Não foi possível cancelar a coleta";
             set({ loading: false, error: message });
             return { success: false, error: message };
         }
@@ -122,7 +122,7 @@ const usePickupStore = create((set, get) => ({
             set({ currentPickup: res.data.pickup, loading: false });
             return { success: true, pickup: res.data.pickup };
         } catch (err) {
-            const message = err.response?.data?.message || err.message || "Failed to fetch pickup";
+            const message = err.response?.data?.message || err.message || "Não foi possível carregar a coleta";
             set({ loading: false, error: message });
             return { success: false, error: message };
         }

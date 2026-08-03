@@ -56,7 +56,7 @@ export default function ContactForm() {
           Mensagem enviada
         </h3>
         <p className="text-gray-500 text-sm mb-6">
-          A equipe EcoRoute retornara em breve.
+          O atendimento da EcoRoute retornará em breve.
         </p>
         <button
           onClick={() => setSubmitted(false)}

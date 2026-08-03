@@ -23,7 +23,7 @@ const SEVERITY_LABELS = {
 
 const ROLE_LABELS = {
   super_admin: "gestão geral",
-  org_admin: "cooperativa",
+  org_admin: "operador parceiro",
   driver: "coletor",
   customer: "cliente",
 };
@@ -275,7 +275,7 @@ const Notifications = () => {
   const tabs = [
     { id: "alerts", label: "Alertas da operação", icon: <AlertTriangle className="w-4 h-4" /> },
     { id: "clients", label: "Mensagens de clientes", icon: <User className="w-4 h-4" /> },
-    { id: "org_admin", label: "Cooperativas", icon: <Bell className="w-4 h-4" /> },
+    { id: "org_admin", label: "Operadores", icon: <Bell className="w-4 h-4" /> },
     { id: "driver", label: "Relatos de coletores", icon: <Truck className="w-4 h-4" /> },
     { id: "deletions", label: "Solicitações de exclusão", icon: <Ban className="w-4 h-4" /> }
   ];

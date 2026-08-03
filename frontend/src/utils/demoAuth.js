@@ -17,7 +17,7 @@ export const DEMO_DRIVER_CREDENTIALS = Object.freeze({
 });
 
 export const DEMO_ADMIN_CREDENTIALS = Object.freeze({
-  email: "dono@ecoroute.com.br",
+  email: "administracao@ecoroute.com.br",
   password: "EcoRoute@2026",
 });
 
@@ -38,7 +38,7 @@ export const DEMO_USER = Object.freeze({
 
 export const DEMO_DRIVER_USER = Object.freeze({
   id: "demo-driver-001",
-  name: "Prestador Demonstração",
+  name: "Carlos Almeida",
   email: DEMO_DRIVER_CREDENTIALS.email,
   phone: "(11) 97777-2026",
   role: "driver",
@@ -53,7 +53,7 @@ export const DEMO_DRIVER_USER = Object.freeze({
 
 export const DEMO_ADMIN_USER = Object.freeze({
   id: "demo-admin-001",
-  name: "Dono Demonstração",
+  name: "Administração EcoRoute",
   email: DEMO_ADMIN_CREDENTIALS.email,
   phone: "(11) 98888-2026",
   role: "super_admin",

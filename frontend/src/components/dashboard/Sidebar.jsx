@@ -18,7 +18,6 @@ import {
   FileText,
   DollarSign,
   Receipt,
-  CreditCard,
   Landmark,
   Mail,
   X,
@@ -41,11 +40,8 @@ const Sidebar = ({ mobileOpen, onClose }) => {
     {
       label: "Financeiro",
       items: [
-        { name: "Cobranças", icon: Receipt, path: "/admin-dashboard/billing" },
-        ...(!isSuperAdmin
-          ? [{ name: "Minhas cobranças", icon: CreditCard, path: "/admin-dashboard/my-billing" }]
-          : []),
-        { name: "Precificação", icon: DollarSign, path: "/admin-dashboard/pricing" },
+        { name: "Pagamentos de coletas", icon: Receipt, path: "/admin-dashboard/billing" },
+        { name: "Precificação da coleta", icon: DollarSign, path: "/admin-dashboard/pricing" },
         ...(isSuperAdmin
           ? [{ name: "Dados bancários", icon: Landmark, path: "/admin-dashboard/organization-banks" }]
           : []),
@@ -55,10 +51,10 @@ const Sidebar = ({ mobileOpen, onClose }) => {
       label: "Operação",
       items: [
         ...(isSuperAdmin
-          ? [{ name: "Cooperativas", icon: Building2, path: "/admin-dashboard/organizations" }]
-          : [{ name: "Minha cooperativa", icon: Building2, path: "/admin-dashboard/my-organization" }]),
-        { name: "Áreas", icon: MapPin, path: "/admin-dashboard/areas" },
-        { name: "Agenda IA", icon: BrainCircuit, path: "/admin-dashboard/ml-schedule" },
+          ? [{ name: "Operadores parceiros", icon: Building2, path: "/admin-dashboard/organizations" }]
+          : [{ name: "Minha operação", icon: Building2, path: "/admin-dashboard/my-organization" }]),
+        { name: "Áreas atendidas", icon: MapPin, path: "/admin-dashboard/areas" },
+        { name: "Planejamento de rotas", icon: BrainCircuit, path: "/admin-dashboard/ml-schedule" },
         { name: "Veículos", icon: Truck, path: "/admin-dashboard/vehicles" },
         { name: "Coletores", icon: Users, path: "/admin-dashboard/drivers" },
       ],
@@ -66,8 +62,8 @@ const Sidebar = ({ mobileOpen, onClose }) => {
     {
       label: "Pessoas",
       items: [
-        { name: "Usuários", icon: UsersRound, path: "/admin-dashboard/users" },
-        { name: "Administradores", icon: UserCog, path: "/admin-dashboard/admins" },
+        { name: "Contas e acessos", icon: UsersRound, path: "/admin-dashboard/users" },
+        { name: "Gestores", icon: UserCog, path: "/admin-dashboard/admins" },
       ],
     },
     {
@@ -96,7 +92,7 @@ const Sidebar = ({ mobileOpen, onClose }) => {
       {/* Brand */}
       <div className="h-16 flex items-center justify-between px-6 border-b border-primary/10">
         <p className="text-lg font-bold text-primary tracking-tight">
-          {isSuperAdmin ? "Gestão EcoRoute" : "Operação local"}
+          {isSuperAdmin ? "Administração EcoRoute" : "Gestão da operação"}
         </p>
         {/* Mobile close button */}
         <button

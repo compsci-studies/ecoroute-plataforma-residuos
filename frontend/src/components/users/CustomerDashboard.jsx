@@ -15,14 +15,13 @@ import {
 } from "lucide-react";
 import api from "../../utils/api";
 import useAuthStore from "../../stores/useAuthStore";
-import useBillingStore from "../../stores/useBillingStore";
 import TruckLoader from "../shared/TruckLoader";
 import { getSocket } from "../../utils/socket";
 import LazyChart from "../charts/LazyChart";
 import { ecorouteImages } from "../../assets/ecorouteImages";
 import { alpha, themeColor } from "../../utils/themeColors";
 
-/* ── Viewport observer (same pattern as OurTeam / SchedulePage) ── */
+/* ── Viewport observer shared by the customer flow ── */
 
 function useInView() {
   const ref = useRef(null);
@@ -95,6 +94,7 @@ const CATEGORY_LABELS = {
   recyclable: "Recicláveis",
   "non-recyclable": "Não recicláveis",
   both: "Mistos",
+  mixed: "Mistos",
 };
 
 const LEVEL_LABELS = {
@@ -136,6 +136,10 @@ const DEMO_DASHBOARD_DATA = {
       status: "PENDING",
       category: "recyclable",
       level: "easy",
+      estimatedPrice: 86,
+      currency: "BRL",
+      paymentMethod: null,
+      paymentStatus: "UNPAID",
       createdAt: "2026-07-05T14:00:00.000Z",
       location: { address: "Rua Augusta, 1200 - Consolação, São Paulo" },
     },
@@ -144,6 +148,10 @@ const DEMO_DASHBOARD_DATA = {
       status: "ASSIGNED",
       category: "both",
       level: "medium",
+      estimatedPrice: 148,
+      currency: "BRL",
+      paymentMethod: "cash",
+      paymentStatus: "PENDING",
       createdAt: "2026-07-02T10:00:00.000Z",
       location: { address: "Av. Paulista, 900 - Bela Vista, São Paulo" },
     },
@@ -152,6 +160,10 @@ const DEMO_DASHBOARD_DATA = {
       status: "COMPLETED",
       category: "recyclable",
       level: "easy",
+      estimatedPrice: 92,
+      currency: "BRL",
+      paymentMethod: "pix",
+      paymentStatus: "PAID",
       createdAt: "2026-06-24T09:30:00.000Z",
       location: { address: "Rua Vergueiro, 3100 - Vila Mariana, São Paulo" },
     },
@@ -284,16 +296,9 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
   const navigate = useNavigate();
   const { user: authUser } = useAuthStore();
   const user = previewUser || authUser;
-  const {
-    bills,
-    summary: billingSummary,
-    fetchMyBills,
-    payBill,
-  } = useBillingStore();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [billingPayingId, setBillingPayingId] = useState(null);
   const demoPreview =
     previewMode ||
     (import.meta.env.DEV && localStorage.getItem("ecoroute-demo-auth") === "1");
@@ -331,8 +336,7 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
   // Initial load
   useEffect(() => {
     fetchDashboard.current({ showLoader: true });
-    if (!demoPreview) fetchMyBills();
-  }, [demoPreview, fetchMyBills]);
+  }, [demoPreview]);
 
   // ── Realtime: keep dashboard in sync via WebSocket ───────────────────────
   // Any pickup event that could affect this customer's stats triggers a full
@@ -367,12 +371,10 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
   useEffect(() => {
     const onFocus = () => {
       fetchDashboard.current();
-      if (!demoPreview) fetchMyBills();
     };
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         fetchDashboard.current();
-        if (!demoPreview) fetchMyBills();
       }
     };
     window.addEventListener("focus", onFocus);
@@ -381,10 +383,20 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [demoPreview, fetchMyBills]);
+  }, [demoPreview]);
 
   const stats = data?.stats;
   const pickups = data?.pickups || [];
+  const openPaymentPickups = pickups.filter(
+    (pickup) =>
+      !["CANCELLED", "REJECTED", "EXPIRED"].includes(pickup.status) &&
+      Number(pickup.estimatedPrice || 0) > 0 &&
+      pickup.paymentStatus !== "PAID",
+  );
+  const openPaymentTotal = openPaymentPickups.reduce(
+    (total, pickup) => total + Number(pickup.estimatedPrice || 0),
+    0,
+  );
 
   // Chart data
   const statusChartData = useMemo(() => {
@@ -642,7 +654,7 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
               >
                 <Receipt size={16} />
-                Ver cobranças
+                Ver pagamentos
               </button>
             </div>
           </FadeIn>
@@ -690,15 +702,15 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
           </div>
         </section>
 
-        {/* ── Billing Summary ── */}
-        {billingSummary && billingSummary.unpaid > 0 && (
+        {/* ── Pickup payment summary ── */}
+        {openPaymentPickups.length > 0 && (
           <section className="pb-6 px-6 md:px-16 lg:px-24">
             <div className="max-w-5xl mx-auto">
               <FadeIn delay={450}>
                 <div className="bg-white/5 backdrop-blur-md border border-amber-500/20 rounded-2xl p-5 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xs font-semibold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                      <Receipt size={14} /> Cobranças pendentes
+                      <Receipt size={14} /> Pagamentos das coletas
                     </h3>
                     <button
                       onClick={() => navigate("/billing")}
@@ -711,96 +723,49 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
                       <p className="text-2xl font-bold text-amber-400">
-                        {billingSummary.unpaid}
+                        {openPaymentPickups.length}
                       </p>
                       <p className="text-xs text-white/40 mt-0.5">
-                        Cobranças abertas
+                        Coletas com pagamento em aberto
                       </p>
                     </div>
                     <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
                       <p className="text-2xl font-bold text-red-400">
-                        R$ {(billingSummary.totalDue || 0).toLocaleString()}
+                        {openPaymentTotal.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
                       </p>
-                      <p className="text-xs text-white/40 mt-0.5">Total devido</p>
+                      <p className="text-xs text-white/40 mt-0.5">Valor das coletas</p>
                     </div>
                   </div>
 
-                  {/* Show up to 3 unpaid bills with quick-pay */}
                   <div className="space-y-2">
-                    {bills
-                      .filter(
-                        (b) => ["UNPAID", "OVERDUE", "CASH_PENDING"].includes(b.status),
-                      )
-                      .slice(0, 3)
-                      .map((bill) => {
-                        const isOverdue = bill.status === "OVERDUE";
-                        const isCashPending = bill.status === "CASH_PENDING";
-                        const isPaying = billingPayingId === bill._id;
-                        return (
-                          <div
-                            key={bill._id}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 hover:bg-white/10 transition-all"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-white">
-                                {new Date(
-                                  bill.billingYear,
-                                  bill.billingMonth - 1,
-                                ).toLocaleDateString("pt-BR", {
-                                  month: "long",
-                                  year: "numeric",
-                                })}
-                              </p>
-                              <p className="text-xs text-white/40 mt-0.5">
-                                Vencimento:{" "}
-                                {new Date(bill.dueDate).toLocaleDateString(
-                                  "pt-BR",
-                                  { month: "short", day: "numeric" },
-                                )}
-                                {isOverdue && (
-                                  <span className="text-red-400 ml-2 font-semibold">
-                                    VENCIDA
-                                  </span>
-                                )}
-                                {isCashPending && (
-                                  <span className="text-blue-300 ml-2 font-semibold">
-                                    DINHEIRO PENDENTE
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-white font-bold text-sm">
-                                R$ {bill.amount.toLocaleString()}
-                              </span>
-                              {isCashPending ? (
-                                <span className="rounded-lg px-3 py-1.5 text-[11px] font-semibold bg-blue-500/20 text-blue-200">
-                                  Aguardando admin
-                                </span>
-                              ) : (
-                                <button
-                                  onClick={async () => {
-                                    setBillingPayingId(bill._id);
-                                    const result = await payBill(
-                                      bill._id,
-                                      "pix",
-                                    );
-                                    if (result.redirecting) return;
-                                    setBillingPayingId(null);
-                                    if (!result.success)
-                                      alert(result.error || "Pagamento falhou");
-                                    else if (!demoPreview) fetchMyBills();
-                                  }}
-                                  disabled={isPaying}
-                                  className="rounded-lg px-3 py-1.5 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {isPaying ? "Processando..." : "Pagar com Pix"}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                    {openPaymentPickups.slice(0, 3).map((pickup) => (
+                      <div
+                        key={pickup.id || pickup._id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-white">
+                            {pickup.location?.address || pickup.area || "Solicitação de coleta"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-white/40">
+                            {pickup.paymentMethod === "cash"
+                              ? "Dinheiro: confirmação pelo coletor na retirada"
+                              : pickup.paymentMethod === "pix"
+                                ? "Pix: confirmação automática pelo PagSeguro"
+                                : "Escolha Pix ou pagamento na coleta"}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-bold text-white">
+                          {Number(pickup.estimatedPrice).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: pickup.currency || "BRL",
+                          })}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </FadeIn>

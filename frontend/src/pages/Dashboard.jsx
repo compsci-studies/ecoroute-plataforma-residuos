@@ -6,7 +6,6 @@ import useAuthStore from "../stores/useAuthStore";
 import useMLScheduleStore from "../stores/useMLScheduleStore";
 import AdminAnalyticsCharts from "../components/dashboard/AdminAnalyticsCharts";
 import TruckLoader from "../components/shared/TruckLoader";
-import useBillingStore from "../stores/useBillingStore";
 import { getSocket } from "../utils/socket";
 import { isAdminDemoSession } from "../utils/demoAuth";
 import { useDashboardTheme } from "../hooks/useDashboardTheme";
@@ -22,6 +21,9 @@ import {
   CheckCircle2,
   CircleHelp,
   Users,
+  UserRound,
+  UserRoundCog,
+  Truck,
   Wallet,
   CreditCard,
 } from "lucide-react";
@@ -51,7 +53,6 @@ const Dashboard = () => {
   const { data, isLoading, error, fetchAnalytics } = useAnalyticsStore();
   const { user } = useAuthStore();
   const { schedules, fetchSchedules, loading: mlLoading } = useMLScheduleStore();
-  const { adminSummary: billingSummary, fetchBillingOverview } = useBillingStore();
   const { theme } = useDashboardTheme();
   const role = user?.role;
   const isSuperAdmin = role === "super_admin";
@@ -63,9 +64,8 @@ const Dashboard = () => {
     const controller = new AbortController();
     fetchAnalytics({ signal: controller.signal });
     fetchSchedules({}, { signal: controller.signal });
-    fetchBillingOverview({ limit: 1 }, { signal: controller.signal });
     return () => controller.abort();
-  }, [user, fetchAnalytics, fetchSchedules, fetchBillingOverview]);
+  }, [user, fetchAnalytics, fetchSchedules]);
 
   useEffect(() => {
     if (!user) return undefined;
@@ -78,7 +78,6 @@ const Dashboard = () => {
       dashboardRefreshRef.current = controller;
       fetchAnalytics({ signal: controller.signal });
       fetchSchedules({}, { signal: controller.signal });
-      fetchBillingOverview({ limit: 1 }, { signal: controller.signal });
     };
     const events = [
       "pickup:created",
@@ -95,7 +94,7 @@ const Dashboard = () => {
       dashboardRefreshRef.current?.abort();
       events.forEach((event) => socket.off(event, refreshDashboardData));
     };
-  }, [user, fetchAnalytics, fetchSchedules, fetchBillingOverview]);
+  }, [user, fetchAnalytics, fetchSchedules]);
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todaySchedule = useMemo(() => {
@@ -174,37 +173,33 @@ const Dashboard = () => {
     totalPickups > 0 ? Math.round((completedPickups / totalPickups) * 100) : 0;
   const revenueBreakdown = useMemo(() => {
     const pickupSplit = data?.paymentMethodRevenue;
-    const billingSplit = billingSummary?.paymentMethodRevenue;
     const pickupTotal = Number(ecosystemStats.totalRevenue || pickupSplit?.total || 0);
-    const billingTotal = Number(billingSummary?.totalRevenue || billingSplit?.total || 0);
 
-    if (
-      (pickupSplit && (pickupSplit.cash || pickupSplit.online || pickupSplit.total)) ||
-      (billingSplit && (billingSplit.cash || billingSplit.online || billingSplit.total))
-    ) {
-      const cash = Number(pickupSplit?.cash || 0) + Number(billingSplit?.cash || 0);
-      const online = Number(pickupSplit?.online || 0) + Number(billingSplit?.online || 0);
+    if (pickupSplit && (pickupSplit.cash || pickupSplit.online || pickupSplit.total)) {
+      const cash = Number(pickupSplit.cash || 0);
+      const online = Number(pickupSplit.online || 0);
       return {
         cash,
         online,
-        total: cash + online,
+        total: cash + online || pickupTotal,
         pickup: pickupTotal,
-        subscription: billingTotal,
         isEstimated: false,
       };
     }
 
-    const totalRevenue = pickupTotal + billingTotal;
-    const cash = Math.round(totalRevenue * 0.46);
+    const cash = Math.round(pickupTotal * 0.46);
     return {
       cash,
-      online: Math.max(totalRevenue - cash, 0),
-      total: totalRevenue,
+      online: Math.max(pickupTotal - cash, 0),
+      total: pickupTotal,
       pickup: pickupTotal,
-      subscription: billingTotal,
-      isEstimated: totalRevenue > 0,
+      isEstimated: pickupTotal > 0,
     };
-  }, [billingSummary, data?.paymentMethodRevenue, ecosystemStats.totalRevenue]);
+  }, [data?.paymentMethodRevenue, ecosystemStats.totalRevenue]);
+
+  const averageTicket = completedPickups > 0
+    ? revenueBreakdown.total / completedPickups
+    : 0;
 
   const revenueChartData = useMemo(
     () => ({
@@ -257,15 +252,15 @@ const Dashboard = () => {
   const stats = useMemo(
     () => [
       {
-        title: isSuperAdmin ? "Cooperativas" : "Coletores",
+        title: isSuperAdmin ? "Operadores parceiros" : "Coletores",
         value: ecosystemStats.totalOrganizations || 0,
-        label: isSuperAdmin ? "Parceiros ativos" : "Na organização",
+        label: isSuperAdmin ? "Operadores cadastrados" : "Na operação",
         icon: isSuperAdmin
           ? <Building2 className="h-5 w-5" />
           : <Users className="h-5 w-5" />,
         tone: "primary",
         hint: isSuperAdmin
-          ? "Cooperativas e operadores cadastrados na plataforma."
+          ? "Cooperativas e empresas prestadoras cadastradas como operadores parceiros."
           : "Coletores vinculados a esta operação.",
       },
       {
@@ -324,10 +319,12 @@ const Dashboard = () => {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-primary tracking-tight">
-            {isSuperAdmin ? "Analítico geral EcoRoute" : "Analítico da operação"}
+            {isSuperAdmin ? "Visão geral da plataforma" : "Visão geral da operação"}
           </h2>
           <p className="text-sm text-primary/60 mt-1">
-            Visão consolidada de coletas, receita, rotas e previsão de resíduos.
+            {isSuperAdmin
+              ? "Este perfil administra a rede EcoRoute, seus operadores parceiros e os resultados consolidados."
+              : "Este perfil coordena uma organização prestadora, sua equipe, frota, rotas e coletas."}
           </p>
         </div>
         <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card-soft)] px-3 py-2 text-xs font-semibold text-primary/65">
@@ -335,6 +332,40 @@ const Dashboard = () => {
           Dados em tempo real
         </div>
       </div>
+
+      <section className="overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[var(--dash-card)] shadow-sm shadow-primary/5">
+        <div className="flex flex-col gap-3 border-b border-[var(--dash-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-primary/40">Modelo operacional</p>
+            <h3 className="mt-1 text-lg font-bold text-primary">Quem faz o quê na EcoRoute</h3>
+          </div>
+          <span className="inline-flex w-fit rounded-lg bg-primary/7 px-3 py-1.5 text-xs font-semibold text-primary/65">
+            Seu acesso: {isSuperAdmin ? "administração da plataforma" : "gestão do operador"}
+          </span>
+        </div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4">
+          <RoleFlowItem
+            icon={UserRound}
+            title="Cliente"
+            description="Solicita a retirada e paga o valor calculado para aquela coleta."
+          />
+          <RoleFlowItem
+            icon={Building2}
+            title="Operador parceiro"
+            description="Cooperativa ou empresa que reúne base, frota, gestores e coletores."
+          />
+          <RoleFlowItem
+            icon={UserRoundCog}
+            title="Gestor da operação"
+            description="Administra pessoas, veículos, áreas, pagamentos e planejamento de rotas."
+          />
+          <RoleFlowItem
+            icon={Truck}
+            title="Coletor"
+            description="Profissional do operador que aceita e executa as coletas em campo."
+          />
+        </div>
+      </section>
 
       {/* Revenue */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -348,10 +379,10 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-primary/45">
-                      Receita total gerada
+                      Receita de serviços realizados
                     </p>
                     <p className="mt-0.5 text-sm text-primary/55">
-                      Coletas pagas + assinaturas
+                      Somente pagamentos vinculados a coletas
                     </p>
                   </div>
                 </div>
@@ -360,8 +391,8 @@ const Dashboard = () => {
                 </h3>
                 <p className="mt-2 max-w-xl text-sm text-primary/55">
                   {isSuperAdmin
-                    ? "Receita operacional gerada por todas as cooperativas e unidades cadastradas."
-                    : "Receita da sua operação com coletas pagas e mensalidades confirmadas."}
+                    ? "Receita operacional das coletas pagas em toda a rede de operadores parceiros."
+                    : "Receita das coletas pagas e executadas pela sua operação."}
                 </p>
               </div>
             </div>
@@ -369,13 +400,13 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <RevenueMiniStat
                 icon={<Trash2 className="h-4 w-4" />}
-                label="Receita de coletas"
+                label="Receita confirmada"
                 value={revenueBreakdown.pickup}
               />
               <RevenueMiniStat
                 icon={<CreditCard className="h-4 w-4" />}
-                label="Receita recorrente"
-                value={revenueBreakdown.subscription}
+                label="Valor médio por coleta"
+                value={averageTicket}
               />
             </div>
           </div>
@@ -389,7 +420,7 @@ const Dashboard = () => {
               </p>
               <h3 className="mt-1 text-lg font-bold text-primary">Dinheiro vs Pix/online</h3>
             </div>
-            <InfoHint text="Combina receita de coletas e mensalidades pagas por método de pagamento." />
+            <InfoHint text="Considera exclusivamente os pagamentos confirmados das solicitações de coleta." />
           </div>
           <div className="h-36">
             <LazyChart type="bar" data={revenueChartData} options={revenueChartOptions} />
@@ -415,7 +446,7 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold text-primary">Atividade central em uma visão</h3>
           </div>
           <p className="text-xs font-medium text-primary/45">
-            {isSuperAdmin ? "Escopo do sistema" : "Escopo da organização"}
+            {isSuperAdmin ? "Escopo da plataforma" : "Escopo do operador"}
           </p>
         </div>
         <div className="grid grid-cols-1 overflow-hidden rounded-xl border border-[var(--dash-border)] bg-[color-mix(in_srgb,var(--dash-card)_70%,transparent)] sm:grid-cols-2 xl:grid-cols-4">
@@ -437,10 +468,10 @@ const Dashboard = () => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-semibold text-primary">Agenda IA de hoje</h3>
-                <InfoHint text="Mostra rotas sugeridas por IA, resíduos previstos e cobertura da coleta." />
+                <h3 className="text-sm font-semibold text-primary">Planejamento de rotas de hoje</h3>
+                <InfoHint text="Mostra as rotas sugeridas pelo motor de otimização, os resíduos previstos e a cobertura esperada." />
               </div>
-              <p className="text-xs text-primary/55">Previsão de resíduos e despacho inteligente</p>
+              <p className="text-xs text-primary/55">Sugestões automáticas para revisão e confirmação do gestor</p>
             </div>
           </div>
           {todaySchedule && (
@@ -460,11 +491,11 @@ const Dashboard = () => {
 
         {mlLoading ? (
           <div className="flex items-center justify-center h-20">
-            <TruckLoader text="Carregando previsoes IA..." size="sm" />
+            <TruckLoader text="Carregando planejamento de rotas..." size="sm" />
           </div>
         ) : !todaySchedule || !mlInsights ? (
           <p className="text-sm text-primary/50 text-center py-6">
-            Nenhuma agenda IA foi gerada para hoje.
+            Nenhum planejamento de rotas foi gerado para hoje.
           </p>
         ) : (
           <div className="space-y-4">
@@ -568,9 +599,9 @@ const Dashboard = () => {
             </p>
           </div>
         ) : isSuperAdmin ? (
-          <AnalyticsCharts analyticsData={data} billingSummary={billingSummary} mode="super_admin" />
+          <AnalyticsCharts analyticsData={data} mode="super_admin" />
         ) : (
-          <AdminAnalyticsCharts analyticsData={data} billingSummary={billingSummary} />
+          <AdminAnalyticsCharts analyticsData={data} />
         )}
       </section>
 
@@ -585,6 +616,16 @@ const RevenueMiniStat = ({ icon, label, value }) => (
       <p className="text-xs font-bold uppercase tracking-wide">{label}</p>
     </div>
     <p className="text-xl font-bold text-primary">{formatBRL(value)}</p>
+  </div>
+);
+
+const RoleFlowItem = ({ icon: Icon, title, description }) => (
+  <div className="min-h-[150px] border-b border-[var(--dash-border)] p-5 last:border-b-0 sm:border-r sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:last:border-r-0">
+    <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary/8 text-primary">
+      <Icon className="h-5 w-5" />
+    </span>
+    <h4 className="mt-4 text-sm font-bold text-primary">{title}</h4>
+    <p className="mt-1 text-xs leading-relaxed text-primary/52">{description}</p>
   </div>
 );
 

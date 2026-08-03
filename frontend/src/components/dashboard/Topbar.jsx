@@ -1,55 +1,21 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/useAuthStore";
-import useBillingStore from "../../stores/useBillingStore";
 import { useAdminNotificationCounts } from "../../hooks/useAdminNotificationCounts";
-import { AlertTriangle, Bell, CreditCard, LogOut, Menu } from "lucide-react";
+import { Bell, LogOut, Menu } from "lucide-react";
 
 const ROLE_LABELS = {
-  super_admin: "Super administrador",
-  admin: "Administrador",
+  super_admin: "Administrador da plataforma",
+  admin: "Gestor da operação",
 };
 
 const Topbar = ({ onMenuToggle }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
-  const { bills, summary: billingSummary, fetchMyBills } = useBillingStore();
   const { totalUnread } = useAdminNotificationCounts();
 
   const displayName = user?.name || "Admin User";
   const displayRole = user?.role || "admin";
-  const shouldShowAdminBilling = user?.role === "admin";
-  const overdueBills = shouldShowAdminBilling
-    ? bills.filter((bill) => bill.status === "OVERDUE")
-    : [];
-  const unpaidBillCount = shouldShowAdminBilling ? billingSummary?.unpaid || 0 : 0;
-  const hasBillingAlert = shouldShowAdminBilling && unpaidBillCount > 0;
-  const billingAlertLabel = overdueBills.length > 0 ? "Pagamento vencido" : "Pagamento pendente";
-
-  useEffect(() => {
-    if (!shouldShowAdminBilling) return;
-
-    const controller = new AbortController();
-    fetchMyBills({ signal: controller.signal });
-
-    const refetch = () => fetchMyBills();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refetch();
-    };
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") refetch();
-    }, 60000);
-
-    window.addEventListener("focus", refetch);
-    document.addEventListener("visibilitychange", onVisible);
-
-    return () => {
-      clearInterval(interval);
-      controller.abort();
-      window.removeEventListener("focus", refetch);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [shouldShowAdminBilling, fetchMyBills]);
 
   const initials = React.useMemo(() => {
     const parts = String(displayName).trim().split(/\s+/).slice(0, 2);
@@ -78,55 +44,17 @@ const Topbar = ({ onMenuToggle }) => {
 
           <div className="min-w-0">
             <h1 className="text-base sm:text-lg font-bold text-primary tracking-tight truncate">
-              Console EcoRoute
+              {displayRole === "super_admin" ? "Administração EcoRoute" : "Gestão da operação"}
             </h1>
             <p className="hidden sm:block text-xs text-primary/50">
-              Monitore coletas, rotas, veículos e operação urbana
+              {displayRole === "super_admin"
+                ? "Governança da rede de operadores e serviços"
+                : "Coordenação de coletas, equipe, frota e rotas"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {hasBillingAlert && (
-            <button
-              onClick={() => navigate("/admin-dashboard/my-billing")}
-              className={`hidden sm:inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
-                overdueBills.length > 0
-                  ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-                  : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
-              }`}
-              aria-label={`${billingAlertLabel}: ${unpaidBillCount} cobrança${unpaidBillCount === 1 ? "" : "s"} em aberto`}
-            >
-              {overdueBills.length > 0 ? (
-                <AlertTriangle className="h-4 w-4" />
-              ) : (
-                <CreditCard className="h-4 w-4" />
-              )}
-              <span>{billingAlertLabel}</span>
-            </button>
-          )}
-
-          {hasBillingAlert && (
-            <button
-              onClick={() => navigate("/admin-dashboard/my-billing")}
-              className={`relative p-2 rounded-lg transition-colors sm:hidden ${
-                overdueBills.length > 0
-                  ? "bg-red-50 text-red-700 hover:bg-red-100"
-                  : "bg-amber-50 text-amber-700 hover:bg-amber-100"
-              }`}
-              aria-label={`${billingAlertLabel}: ${unpaidBillCount} cobrança${unpaidBillCount === 1 ? "" : "s"} em aberto`}
-            >
-              {overdueBills.length > 0 ? (
-                <AlertTriangle className="h-5 w-5" />
-              ) : (
-                <CreditCard className="h-5 w-5" />
-              )}
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-(--dash-shell)">
-                {unpaidBillCount > 9 ? "9+" : unpaidBillCount}
-              </span>
-            </button>
-          )}
-
           {/* Notification Bell */}
           <button
             onClick={() => navigate("/admin-dashboard/notifications")}

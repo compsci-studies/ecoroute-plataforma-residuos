@@ -112,7 +112,7 @@ export function Hero() {
             </Link>
             <Link to="/request-pickup" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-full font-medium text-lg flex items-center justify-center gap-3 transition-all cursor-pointer hover:bg-white/20 hover:shadow-md">
-                Ver fluxo de coleta
+                Simular coleta e ver pontos
               </button>
             </Link>
           </div>
