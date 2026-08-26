@@ -55,4 +55,28 @@ test("customer demo session creates the pickup after accepting the estimate", ()
   assert.equal(resumed.data.pickup.status, "PAYMENT_REQUIRED");
   assert.equal(resumed.data.pickup.routeDistanceKm, response.data.pickup.routeDistanceKm);
   assert.equal(resumed.data.pickup.location.address, "Praça da Sé, São Paulo - SP");
+
+  const payment = getDemoApiMockResponse(
+    request("post", "/payments/initiate", {
+      pickupId: response.data.pickup.id,
+      method: "pix",
+    }),
+    DEMO_AUTH_TOKENS.customer,
+  );
+
+  assert.equal(payment.data.pickup.status, "PENDING");
+  assert.equal(payment.data.pickup.paymentStatus, "PAID");
+
+  const list = getDemoApiMockResponse(
+    request("get", "/pickups/my-pickups"),
+    DEMO_AUTH_TOKENS.customer,
+  );
+  const createdPickup = list.data.pickups.find(
+    (pickup) => pickup.id === response.data.pickup.id,
+  );
+
+  assert.ok(createdPickup);
+  assert.equal(createdPickup.location.address, "Praça da Sé, São Paulo - SP");
+  assert.equal(createdPickup.paymentStatus, "PAID");
+  assert.equal(list.data.activePickup.id, response.data.pickup.id);
 });
