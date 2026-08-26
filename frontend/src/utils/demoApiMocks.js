@@ -822,6 +822,21 @@ function getDemoRuntimePickup(id) {
   return null;
 }
 
+function getDemoRuntimePickups() {
+  const pickups = new Map(demoRuntimePickups);
+  try {
+    if (typeof localStorage !== "undefined") {
+      const stored = JSON.parse(localStorage.getItem(DEMO_RUNTIME_PICKUPS_KEY) || "{}");
+      Object.entries(stored).forEach(([id, pickup]) => pickups.set(id, pickup));
+    }
+  } catch {
+    // In-memory requests remain available if browser storage is unavailable.
+  }
+  return [...pickups.values()].sort(
+    (left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0),
+  );
+}
+
 function pickupWithStatus(status = null) {
   const pickup = { ...DEMO_DRIVER_PICKUP };
   if (status) pickup.status = status;
@@ -1008,16 +1023,41 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
   }
 
   if (method === "get" && pathname === "/pickups/my-pickups") {
-    const pickups = [{ ...DEMO_DRIVER_PICKUP }, ...DEMO_HISTORY_PICKUPS];
+    const runtimePickups = getDemoRuntimePickups();
+    const runtimeIds = new Set(runtimePickups.map((pickup) => String(pickup.id || pickup._id)));
+    const pickups = [
+      ...runtimePickups,
+      { ...DEMO_DRIVER_PICKUP },
+      ...DEMO_HISTORY_PICKUPS,
+    ].filter((pickup, index, items) => {
+      const id = String(pickup.id || pickup._id);
+      if (runtimeIds.has(id)) return index < runtimePickups.length;
+      return items.findIndex((item) => String(item.id || item._id) === id) === index;
+    });
+    const activePickup = pickups.find((pickup) =>
+      ["PENDING", "ASSIGNED", "EN_ROUTE", "ARRIVED", "COLLECTING"].includes(pickup.status),
+    ) || null;
+    const statusCounts = pickups.reduce((counts, pickup) => ({
+      ...counts,
+      [pickup.status]: (counts[pickup.status] || 0) + 1,
+    }), {});
+    const categoryCounts = pickups.reduce((counts, pickup) => ({
+      ...counts,
+      [pickup.category]: (counts[pickup.category] || 0) + 1,
+    }), {});
+    const levelCounts = pickups.reduce((counts, pickup) => ({
+      ...counts,
+      [pickup.level]: (counts[pickup.level] || 0) + 1,
+    }), {});
     return demoResponse({
       pickups,
-      activePickup: { ...DEMO_DRIVER_PICKUP },
+      activePickup,
       stats: {
         total: pickups.length,
         totalSpent: 148,
-        statusCounts: { PENDING: 1, COMPLETED: 1, CANCELLED: 1, PAYMENT_REQUIRED: 1 },
-        categoryCounts: { recyclable: 3, mixed: 1 },
-        levelCounts: { easy: 1, medium: 2, hard: 1 },
+        statusCounts,
+        categoryCounts,
+        levelCounts,
         monthly: [
           {
             month: dateKey(0).slice(0, 7),
@@ -1103,6 +1143,15 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
         (item) => String(item.id || item._id) === String(body.pickupId),
       ) || DEMO_DRIVER_PICKUP;
     const paymentCompleted = body.method === "pix";
+    const updatedPickup = {
+      ...pickup,
+      id: body.pickupId,
+      _id: body.pickupId,
+      status: "PENDING",
+      paymentMethod: body.method,
+      paymentStatus: paymentCompleted ? "PAID" : "PENDING",
+    };
+    if (getDemoRuntimePickup(body.pickupId)) saveDemoRuntimePickup(updatedPickup);
     return demoResponse({
       success: true,
       method: body.method,
@@ -1115,12 +1164,7 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
         status: paymentCompleted ? "COMPLETED" : "PENDING",
         paidAt: paymentCompleted ? nowIso() : null,
       },
-      pickup: {
-        id: body.pickupId,
-        status: "PENDING",
-        paymentMethod: body.method,
-        paymentStatus: paymentCompleted ? "PAID" : "PENDING",
-      },
+      pickup: updatedPickup,
     });
   }
 
