@@ -555,10 +555,10 @@ function SearchPage() {
     const result = await initiatePayment({ pickupId, method });
     if (result.success) {
       setShowPaymentModal(false);
-      if (method === "cash") {
+      if (method === "cash" || !result.redirecting) {
         setFlow("searching");
       }
-      // For Pix the browser is already redirecting away.
+      // A real Pix checkout redirects away; the demonstration continues locally.
     } else {
       // Roll back if initiation failed so the customer can retry / cancel.
       setPaymentSettled(false);
