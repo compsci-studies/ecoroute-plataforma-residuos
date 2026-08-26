@@ -6,11 +6,9 @@ import {
   CheckCircle2,
   ChevronDown,
   CircleOff,
-  HelpCircle,
   RefreshCcw,
   Sparkles,
   Truck,
-  X,
 } from "lucide-react";
 import useAuthStore from "../../stores/useAuthStore";
 import useMLScheduleStore from "../../stores/useMLScheduleStore";
@@ -74,78 +72,82 @@ const StatCard = ({ label, value, detail, tone = "default" }) => (
   </div>
 );
 
-const Guide = () => {
-  const [open, setOpen] = useState(false);
+const Guide = ({ isSuperAdmin }) => (
+  <section className="rounded-lg border border-primary/10 bg-white p-5">
+    <div>
+      <h2 className="text-base font-semibold text-primary">Como funciona o planejamento assistido</h2>
+      <p className="mt-1 max-w-4xl text-sm leading-6 text-primary/55">
+        {isSuperAdmin
+          ? "A Administração EcoRoute solicita a geração da proposta e decide se ela será confirmada para despacho."
+          : "Você consulta somente as áreas do seu operador. A Administração EcoRoute gera e confirma o planejamento geral."}
+        {" "}O sistema não cria pedidos de clientes nem despacha veículos sozinho.
+      </p>
+    </div>
 
-  return (
-    <section className="relative rounded-lg border border-primary/10 bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-primary">Guia do planejamento de rotas</h2>
-          <p className="mt-1 text-sm text-primary/50">Entenda as prioridades sugeridas, a cobertura e as decisões de despacho.</p>
+    <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {[
+        {
+          step: "1",
+          title: "Solicitação administrativa",
+          text: "A administração escolhe a data e aciona Gerar planejamento.",
+          icon: CalendarDays,
+        },
+        {
+          step: "2",
+          title: "Previsão por área",
+          text: "O motor estima os quilogramas de resíduos a partir do histórico e do perfil de cada área.",
+          icon: BrainCircuit,
+        },
+        {
+          step: "3",
+          title: "Sugestão de recursos",
+          text: "O sistema combina volume previsto, capacidade dos veículos e coletores disponíveis.",
+          icon: Truck,
+        },
+        {
+          step: "4",
+          title: "Revisão humana",
+          text: "A administração confere pendências e confirma. Só então as atribuições chegam aos coletores.",
+          icon: CheckCircle2,
+        },
+      ].map(({ step, title, text, icon: Icon }) => (
+        <li key={step} className="rounded-lg border border-primary/8 bg-primary/[0.025] p-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-xs font-bold text-white">{step}</span>
+            <Icon className="h-4 w-4 text-primary/55" />
+          </div>
+          <h3 className="mt-3 text-sm font-semibold text-primary">{title}</h3>
+          <p className="mt-1 text-xs leading-5 text-primary/55">{text}</p>
+        </li>
+      ))}
+    </ol>
+
+    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      <div className="rounded-lg border border-primary/8 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary/45">Situação da cobertura</p>
+        <div className="mt-2 space-y-2">
+          {PLAN_LEGEND.map((item) => (
+            <div key={item.label} className="flex items-start gap-2 text-xs text-primary/60">
+              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.dot}`} />
+              <span><strong className="text-primary">{item.label}:</strong> {item.text}</span>
+            </div>
+          ))}
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/10 bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-          aria-expanded={open}
-        >
-          <HelpCircle className="h-4 w-4" />
-          Ajuda
-        </button>
       </div>
-
-      {open && (
-        <div className="absolute right-4 top-[calc(100%-0.5rem)] z-30 w-[min(42rem,calc(100vw-3rem))] rounded-lg border border-primary/12 bg-white p-4 shadow-2xl dark:bg-[var(--dash-card-soft)]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-primary">Como ler este planejamento</h3>
-              <p className="mt-1 text-sm leading-relaxed text-primary/55">
-                Cada card representa uma área de coleta. O ponto principal mostra o status do despacho, o nível indica o volume previsto e a ajuda do card explica a ação necessária.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-primary/45 transition hover:bg-primary/8 hover:text-primary"
-              aria-label="Fechar guia do planejamento"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            <div className="rounded-lg border border-primary/8 bg-primary/[0.025] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary/45">Cores de status</p>
-              <div className="mt-2 space-y-2">
-                {PLAN_LEGEND.map((item) => (
-                  <div key={item.label} className="flex items-start gap-2 text-sm text-primary/60">
-                    <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${item.dot}`} />
-                    <span>
-                      <span className="font-semibold text-primary">{item.label}</span>: {item.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-primary/8 bg-primary/[0.025] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary/45">Cores de volume previsto</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {WASTE_LEGEND.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-semibold text-primary/65 dark:bg-primary/5">
-                    <span className={`h-2 w-2 rounded-full ${item.dot}`} />
-                    {item.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+      <div className="rounded-lg border border-primary/8 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary/45">Faixa de volume previsto</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {WASTE_LEGEND.map((item) => (
+            <span key={item.label} className="inline-flex items-center gap-2 rounded-full border border-primary/10 px-3 py-1.5 text-xs font-semibold text-primary/65">
+              <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+              {item.label}
+            </span>
+          ))}
         </div>
-      )}
-    </section>
-  );
-};
+      </div>
+    </div>
+  </section>
+);
 
 const MLScheduleDashboard = () => {
   const {
@@ -242,7 +244,7 @@ const MLScheduleDashboard = () => {
               </span>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-primary">Planejamento diário de rotas</h1>
-                <p className="text-sm text-primary/55">O sistema sugere a distribuição das coletas; o gestor revisa e confirma antes do despacho.</p>
+                <p className="text-sm text-primary/55">A administração gera uma proposta de recursos; a confirmação humana ocorre antes do despacho.</p>
               </div>
             </div>
 
@@ -268,7 +270,7 @@ const MLScheduleDashboard = () => {
               }`}
             >
               <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-rose-500"}`} />
-              {isOnline ? "Otimização online" : "Modo de contingência"}
+              {isOnline ? "Motor de planejamento disponível" : "Estratégia de contingência ativa"}
             </span>
 
             <button
@@ -280,7 +282,7 @@ const MLScheduleDashboard = () => {
               <RefreshCcw className="h-4 w-4" />
             </button>
 
-            {displaySchedule?.status === "draft" && (
+            {isSuperAdmin && displaySchedule?.status === "draft" && (
               <button
                 type="button"
                 onClick={handleConfirmCurrent}
@@ -295,7 +297,7 @@ const MLScheduleDashboard = () => {
         </div>
       </section>
 
-      <Guide />
+      <Guide isSuperAdmin={isSuperAdmin} />
 
       {error && (
         <div className="flex items-start justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
@@ -309,10 +311,15 @@ const MLScheduleDashboard = () => {
       {displaySchedule && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Resíduo previsto" value={`${formatNumber(displaySchedule.totalPredictedWasteKg)} kg`} detail={`${totalAreas} áreas de coleta`} />
-            <StatCard label="Cobertura" value={`${coveragePercent}%`} detail={`${coveredAreas} de ${totalAreas} áreas atendidas`} tone={coveragePercent < 80 ? "text-amber-700" : "text-emerald-700"} />
-            <StatCard label="Veículos atribuídos" value={summary.totalTrucksAssigned || 0} detail={`${summary.totalTrucksAvailable || 0} veículos disponíveis`} />
-            <StatCard label="Exige ação" value={attentionAreas + Number(summary.driverlessTrucks || 0)} detail={`${summary.driverlessTrucks || 0} veículos sem coletor`} tone="text-rose-700" />
+            <StatCard label="Resíduo previsto" value={`${formatNumber(displaySchedule.totalPredictedWasteKg)} kg`} detail={`Soma estimada para ${totalAreas} áreas antes da coleta.`} />
+            <StatCard label="Cobertura sugerida" value={`${coveragePercent}%`} detail={`${coveredAreas} de ${totalAreas} áreas receberam recursos na proposta.`} tone={coveragePercent < 80 ? "text-amber-700" : "text-emerald-700"} />
+            <StatCard label="Veículos sugeridos" value={summary.totalTrucksAssigned || 0} detail={`Selecionados entre ${summary.totalTrucksAvailable || 0} veículos disponíveis com coletor.`} />
+            <StatCard
+              label="Pendências para revisão"
+              value={attentionAreas + Number(summary.driverlessTrucks || 0)}
+              detail={`${attentionAreas} ${attentionAreas === 1 ? "área" : "áreas"} sem cobertura e ${summary.driverlessTrucks || 0} ${Number(summary.driverlessTrucks || 0) === 1 ? "veículo" : "veículos"} sem coletor.`}
+              tone="text-rose-700"
+            />
           </div>
 
           {(summary.skipped > 0 || summary.driverlessTrucks > 0) && (
@@ -380,8 +387,8 @@ const MLScheduleDashboard = () => {
             className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-primary/[0.03]"
           >
             <div>
-              <h3 className="text-sm font-semibold text-primary">Gerar planejamento</h3>
-              <p className="mt-0.5 text-sm text-primary/50">Crie ou reprocesse um plano para qualquer data.</p>
+              <h3 className="text-sm font-semibold text-primary">Gerar proposta administrativa</h3>
+              <p className="mt-0.5 text-sm text-primary/50">Escolha a data para estimar volumes e sugerir veículo e coletor por área.</p>
             </div>
             <ChevronDown className={`h-5 w-5 text-primary/45 transition-transform ${showGenerator ? "rotate-180" : ""}`} />
           </button>
@@ -406,7 +413,7 @@ const MLScheduleDashboard = () => {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {loading ? "Gerando..." : "Gerar planejamento"}
+                  {loading ? "Gerando..." : "Gerar proposta"}
                 </button>
 
                 {displaySchedule && (

@@ -7,10 +7,21 @@
  */
 import { io } from "socket.io-client";
 import { API_ORIGIN } from "./api";
+import { isDemoToken } from "./demoAuth";
 
 const SOCKET_URL = API_ORIGIN;
 
 let socket = null;
+
+const demoSocket = {
+    connected: true,
+    on() { return this; },
+    once() { return this; },
+    off() { return this; },
+    emit() { return this; },
+    connect() { this.connected = true; return this; },
+    disconnect() { this.connected = false; return this; },
+};
 
 /** Read the current JWT from persisted Zustand store */
 function getToken() {
@@ -24,6 +35,14 @@ function getToken() {
 /** Lazily creates and returns the socket singleton. */
 export function getSocket() {
     const token = getToken();
+
+    // Demo sessions are fully handled by the local API adapter. Treat their
+    // realtime channel as available without sending the fixed demo token to
+    // the production Socket.IO authentication middleware.
+    if (isDemoToken(token)) {
+        demoSocket.connected = true;
+        return demoSocket;
+    }
 
     if (!token) {
         console.warn("[socket] No auth token — socket will not authenticate");

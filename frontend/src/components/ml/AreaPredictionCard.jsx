@@ -63,6 +63,10 @@ const AreaPredictionCard = ({ area, scheduleId }) => {
   const style = STATUS[area.action] || STATUS.dispatch;
   const trucks = area.assignedTrucks || [];
   const firstTruck = trucks[0];
+  const assignedCapacity = trucks.reduce((total, truck) => total + Number(truck.capacity || 0), 0);
+  const capacityCoverage = Number(area.predictedWasteKg || 0) > 0
+    ? Math.round((assignedCapacity / Number(area.predictedWasteKg)) * 100)
+    : 0;
   const canRedispatch =
     (area.action === "skip" || (area.action === "reduced" && trucks.length === 0)) &&
     scheduleId &&
@@ -97,10 +101,10 @@ const AreaPredictionCard = ({ area, scheduleId }) => {
           type="button"
           onClick={() => setShowHelp((value) => !value)}
           className="shrink-0 rounded-lg border border-primary/10 bg-white/70 px-3 py-1.5 text-xs font-semibold text-primary/60 transition hover:bg-white hover:text-primary dark:bg-primary/5 dark:hover:bg-primary/10"
-          aria-label="Mostrar ajuda de status"
+          aria-label={`Explicar a sugestão para ${area.area}`}
           aria-expanded={showHelp}
         >
-          Ajuda
+          Por que esta sugestão?
         </button>
       </div>
 
@@ -108,7 +112,7 @@ const AreaPredictionCard = ({ area, scheduleId }) => {
         <div className="absolute right-4 top-14 z-20 w-[min(20rem,calc(100%-2rem))] rounded-lg border border-primary/12 bg-white p-4 shadow-xl dark:bg-[var(--dash-card-soft)]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-primary">{style.label}</p>
+              <p className="text-sm font-semibold text-primary">Como o sistema chegou a esta proposta</p>
               <p className="mt-1 text-xs leading-relaxed text-primary/60">{style.help}</p>
             </div>
             <button
@@ -121,9 +125,36 @@ const AreaPredictionCard = ({ area, scheduleId }) => {
             </button>
           </div>
 
+          <dl className="mt-3 space-y-2 rounded-lg border border-primary/8 bg-primary/[0.03] px-3 py-3 text-xs">
+            <div>
+              <dt className="font-semibold text-primary">1. Demanda prevista</dt>
+              <dd className="mt-0.5 leading-relaxed text-primary/60">
+                {formatNumber(area.predictedWasteKg)} kg estimados para {area.area}, classificados no nível {WASTE_LABELS[area.wasteCategory]?.toLowerCase() || "sem risco"}.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-primary">2. Recursos encontrados</dt>
+              <dd className="mt-0.5 leading-relaxed text-primary/60">
+                {trucks.length > 0
+                  ? `${trucks.length} ${trucks.length === 1 ? "veículo" : "veículos"}, com ${formatNumber(assignedCapacity)} kg de capacidade total (${capacityCoverage}% da previsão).`
+                  : "Nenhum veículo com coletor disponível foi encontrado para esta área."}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-primary">3. Decisão necessária</dt>
+              <dd className="mt-0.5 leading-relaxed text-primary/60">
+                {area.action === "dispatch"
+                  ? "A capacidade cobre a previsão; a administração ainda precisa confirmar o plano para despachar."
+                  : area.action === "reduced"
+                    ? "A capacidade cobre apenas parte da previsão; revise a carga ou adicione outro recurso."
+                    : "A área permanece sem cobertura até atribuição manual ou reprocessamento."}
+              </dd>
+            </div>
+          </dl>
+
           {area.recommendation && (
-            <div className="mt-3 rounded-lg border border-primary/8 bg-primary/[0.03] px-3 py-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/45">Recomendação</p>
+            <div className="mt-3 rounded-lg border border-primary/8 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/45">Observação do motor</p>
               <p className="mt-1 text-xs leading-relaxed text-primary/60">{area.recommendation}</p>
             </div>
           )}

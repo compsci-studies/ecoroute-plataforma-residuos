@@ -31,7 +31,7 @@ export const ROLE_ROUTES = {
   ],
   customer_admin: [
     { path: '/customer-dashboard', label: 'Painel' },
-    { path: '/schedule', label: 'Agenda' },
+    { path: '/schedule', label: 'Minhas coletas' },
     { path: '/upload-waste', label: 'Solicitar coleta' },
     { path: '/billing', label: 'Pagamentos' },
   ],

@@ -144,12 +144,13 @@ function EmptyState({ message }) {
 
 function KpiCard({ label, value, valueClass = "text-primary", hint }) {
   return (
-    <div className="dash-interactive-card bg-(--dash-card) rounded-2xl border p-4 shadow-sm shadow-primary/5">
+    <div className="dash-interactive-card flex min-h-36 flex-col bg-(--dash-card) rounded-2xl border p-4 shadow-sm shadow-primary/5">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-semibold text-primary/55 uppercase tracking-wider">{label}</p>
         <InfoHint text={hint} />
       </div>
       <p className={`text-2xl font-bold mt-1 ${valueClass}`}>{value}</p>
+      {hint && <p className="mt-auto pt-3 text-xs leading-5 text-primary/55">{hint}</p>}
     </div>
   );
 }
@@ -536,11 +537,17 @@ function AnalyticsCharts({ analyticsData, mode = "super_admin" }) {
       {/* Scheduled collection work from ML schedule assignments */}
       {hasScheduleData && (
         <div className="space-y-6">
+          <div className="border-l-4 border-primary/35 pl-4">
+            <h2 className="text-base font-bold text-primary">Resultado do planejamento assistido</h2>
+            <p className="mt-1 max-w-4xl text-sm leading-6 text-primary/60">
+              Estes indicadores medem atribuições de área geradas para veículo e coletor. Eles não representam novos pedidos de clientes nem cobrança administrativa.
+            </p>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KpiCard label="Serviços planejados" value={(scheduleSummary.totalAssignments || 0).toLocaleString()} hint="Atribuições de coletor criadas pelo planejamento de rotas." />
-            <KpiCard label="Planejamento concluído" value={(scheduleSummary.completedAssignments || 0).toLocaleString()} valueClass="text-emerald-600" hint="Atribuições marcadas como concluídas." />
-            <KpiCard label="Taxa de execução" value={`${scheduleSummary.completionRate || 0}%`} valueClass="text-blue-600" hint="Atribuições concluídas em relação ao total planejado." />
-            <KpiCard label="Resíduo previsto" value={`${(scheduleSummary.predictedWasteKg || 0).toLocaleString()} kg`} valueClass="text-violet-600" hint="Total de resíduos previsto nas áreas do planejamento." />
+            <KpiCard label="Atribuições planejadas" value={(scheduleSummary.totalAssignments || 0).toLocaleString("pt-BR")} hint="Quantidade de combinações entre área, veículo e coletor sugeridas no período." />
+            <KpiCard label="Atribuições concluídas" value={(scheduleSummary.completedAssignments || 0).toLocaleString("pt-BR")} valueClass="text-emerald-600" hint="Atribuições em que o coletor registrou a conclusão da área atendida." />
+            <KpiCard label="Taxa de execução" value={`${scheduleSummary.completionRate || 0}%`} valueClass="text-blue-600" hint="Atribuições concluídas divididas pelo total de atribuições planejadas." />
+            <KpiCard label="Resíduo previsto" value={`${(scheduleSummary.predictedWasteKg || 0).toLocaleString("pt-BR")} kg`} valueClass="text-violet-600" hint="Soma das estimativas de resíduos das áreas antes da execução das coletas." />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

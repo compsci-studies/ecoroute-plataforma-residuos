@@ -54,6 +54,15 @@ const Admins = () => {
     return result;
   }, [admins, searchQuery, roleFilter]);
 
+  const platformAccounts = useMemo(
+    () => filteredAdmins.filter((admin) => admin.role === "super_admin"),
+    [filteredAdmins],
+  );
+  const operatorManagers = useMemo(
+    () => filteredAdmins.filter((admin) => admin.role === "admin"),
+    [filteredAdmins],
+  );
+
   // For super admin: filter orgGroups based on search/role
   const filteredOrgGroups = useMemo(() => {
     if (!isSuperAdmin || !orgGroups) return null;
@@ -112,8 +121,8 @@ const Admins = () => {
   };
 
   // Derived stats
-  const totalAdmins = pagination?.total ?? admins.length;
-  const orgSet = new Set(admins.map(a => a.organization?.name).filter(Boolean));
+  const allOperatorManagers = admins.filter(a => a.role === "admin");
+  const orgSet = new Set(allOperatorManagers.map(a => a.organization?.name).filter(Boolean));
   const superAdminCount = admins.filter(a => a.role === "super_admin").length;
   const recentCount = admins.filter(a => {
     if (!a.createdAt) return false;
@@ -145,9 +154,9 @@ const Admins = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatsCard
-          title="Gestores"
-          value={totalAdmins}
-          label="Contas ativas"
+          title="Gestores de operadores"
+          value={allOperatorManagers.length}
+          label="Contas vinculadas nesta página"
           icon={<Users className="w-5 h-5 text-primary" />}
           iconBg="bg-primary/8"
         />
@@ -217,7 +226,50 @@ const Admins = () => {
       ) : isSuperAdmin && filteredOrgGroups ? (
         /* Super Admin: Grouped by Organization */
         <div className="space-y-5">
-          {filteredOrgGroups.length === 0 ? (
+          {platformAccounts.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2.5 border-b border-violet-100 bg-violet-50 px-5 py-3.5">
+                <Shield className="h-4 w-4 text-violet-700" />
+                <div>
+                  <span className="block text-sm font-semibold text-violet-900">Administração da plataforma</span>
+                  <span className="block text-xs text-violet-700/70">Conta central com visão de toda a rede EcoRoute.</span>
+                </div>
+                <span className="ml-auto rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                  {platformAccounts.length} {platformAccounts.length === 1 ? "conta" : "contas"}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-primary/5">
+                      <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary/40">Conta</th>
+                      <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary/40">Contato</th>
+                      <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary/40">Perfil</th>
+                      <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary/40">Cadastro</th>
+                      <th className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-primary/40">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {platformAccounts.map((account) => (
+                      <AdminRow key={adminKey(account)} a={account} isSuperAdmin={isSuperAdmin} setViewAdmin={setViewAdmin} openEdit={openEdit} setDeleteTarget={setDeleteTarget} setFormError={setFormError} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {operatorManagers.length > 0 && (
+            <div className="flex items-center gap-2 px-1 pt-1">
+              <Building2 className="h-4 w-4 text-primary/50" />
+              <div>
+                <h2 className="text-sm font-semibold text-primary">Gestores dos operadores parceiros</h2>
+                <p className="text-xs text-primary/45">Cada conta abaixo administra somente o operador ao qual está vinculada.</p>
+              </div>
+            </div>
+          )}
+
+          {platformAccounts.length === 0 && filteredOrgGroups.length === 0 ? (
             <AdminEmptyState icon={UserCog} title={searchQuery || roleFilter !== "all" ? "Nenhum gestor encontrado" : "Nenhum gestor cadastrado"} message={searchQuery || roleFilter !== "all" ? "Ajuste a busca ou o filtro para ampliar o resultado." : "As contas de gestão aparecem aqui depois do cadastro."} />
           ) : filteredOrgGroups.map((group) => (
             <div key={group.orgId || group.orgName} className="bg-white rounded-2xl border border-primary/10 overflow-hidden shadow-sm">
@@ -249,13 +301,13 @@ const Admins = () => {
               </div>
             </div>
           ))}
-          <div className="text-xs text-primary/40 text-center">
-            Exibindo {filteredAdmins.length} de {admins.length} gestor{admins.length !== 1 ? "es" : ""} em {filteredOrgGroups.length} operador{filteredOrgGroups.length !== 1 ? "es" : ""}
+          <div className="text-center text-xs text-primary/45">
+            Exibindo {platformAccounts.length + operatorManagers.length} de {admins.length} contas: {platformAccounts.length} da administração da plataforma e {operatorManagers.length} gestor{operatorManagers.length !== 1 ? "es" : ""} em {filteredOrgGroups.length} operador{filteredOrgGroups.length !== 1 ? "es" : ""}.
           </div>
           <PaginationControls
             pagination={pagination}
             onPageChange={(nextPage) => fetchAdmins({ page: nextPage, limit: 10 })}
-            itemLabel="gestores"
+            itemLabel="contas de gestão"
           />
         </div>
       ) : (

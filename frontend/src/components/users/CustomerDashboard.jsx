@@ -647,7 +647,7 @@ function CustomerDashboard({ previewMode = false, previewUser = null }) {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
               >
                 <CalendarDays size={16} />
-                Ver agenda
+                Minhas coletas
               </button>
               <button
                 onClick={() => navigate("/billing")}

@@ -788,6 +788,40 @@ function withPagination(items, searchParams) {
   return pagination(items, page, limit);
 }
 
+const DEMO_RUNTIME_PICKUPS_KEY = "ecoroute-demo-runtime-pickups";
+const demoRuntimePickups = new Map();
+
+function saveDemoRuntimePickup(pickup) {
+  const id = String(pickup.id || pickup._id);
+  demoRuntimePickups.set(id, pickup);
+  try {
+    if (typeof localStorage !== "undefined") {
+      const stored = JSON.parse(localStorage.getItem(DEMO_RUNTIME_PICKUPS_KEY) || "{}");
+      localStorage.setItem(DEMO_RUNTIME_PICKUPS_KEY, JSON.stringify({ ...stored, [id]: pickup }));
+    }
+  } catch {
+    // In-memory state remains available if browser storage is unavailable.
+  }
+}
+
+function getDemoRuntimePickup(id) {
+  const normalizedId = String(id);
+  const inMemory = demoRuntimePickups.get(normalizedId);
+  if (inMemory) return inMemory;
+  try {
+    if (typeof localStorage !== "undefined") {
+      const stored = JSON.parse(localStorage.getItem(DEMO_RUNTIME_PICKUPS_KEY) || "{}");
+      if (stored[normalizedId]) {
+        demoRuntimePickups.set(normalizedId, stored[normalizedId]);
+        return stored[normalizedId];
+      }
+    }
+  } catch {
+    // Fall through to the fixed demonstration dataset.
+  }
+  return null;
+}
+
 function pickupWithStatus(status = null) {
   const pickup = { ...DEMO_DRIVER_PICKUP };
   if (status) pickup.status = status;
@@ -802,12 +836,69 @@ function pickupWithStatus(status = null) {
 
 function getPickupByPath(pathname) {
   const id = pathname.split("/")[2];
+  const runtimePickup = getDemoRuntimePickup(id);
+  if (runtimePickup) return { ...runtimePickup };
+  const historyPickup = DEMO_HISTORY_PICKUPS.find(
+    (pickup) => String(pickup.id || pickup._id) === String(id),
+  );
+  if (historyPickup) return { ...historyPickup };
   if (!id || id === DEMO_DRIVER_PICKUP.id) return { ...DEMO_DRIVER_PICKUP };
   return { ...DEMO_DRIVER_PICKUP, id, _id: id };
 }
 
 function demoResponse(data, status = 200) {
   return { data, status, statusText: status === 204 ? "No Content" : "OK" };
+}
+
+function buildDemoPickupEstimate(body = {}) {
+  const category = body.category || "non-recyclable";
+  const level = body.level || "easy";
+  const categoryKey = category === "recyclable"
+    ? "recyclable"
+    : category === "both" || category === "mixed"
+      ? "mixed"
+      : "nonRecyclable";
+  const categoryBase = DEMO_PRICING_CONFIG.categoryBase[categoryKey];
+  const levelMultiplier = DEMO_PRICING_CONFIG.levelMultiplier[level] || 1;
+
+  const depotLocation = {
+    latitude: DEMO_ORGANIZATIONS[0].location.latitude,
+    longitude: DEMO_ORGANIZATIONS[0].location.longitude,
+    address: DEMO_ORGANIZATIONS[0].location.address,
+  };
+  const latitude = Number(body.latitude || DEMO_USER.location.latitude);
+  const longitude = Number(body.longitude || DEMO_USER.location.longitude);
+  const latDistance = Math.abs(latitude - depotLocation.latitude) * 111;
+  const lngDistance = Math.abs(longitude - depotLocation.longitude) * 102;
+  const distanceKm = Math.max(2.4, Math.round(Math.hypot(latDistance, lngDistance) * 12) / 10);
+  const distanceCharge = Math.round(distanceKm * DEMO_PRICING_CONFIG.distanceRatePerKm * 100) / 100;
+  const total = Math.max(
+    DEMO_PRICING_CONFIG.minimumCharge,
+    Math.round((categoryBase * levelMultiplier + distanceCharge) * 100) / 100,
+  );
+
+  return {
+    success: true,
+    estimatedPrice: total,
+    priceBreakdown: {
+      categoryBase,
+      levelMultiplier,
+      distanceCharge,
+      total,
+    },
+    currency: "BRL",
+    distanceKm,
+    durationMinutes: Math.max(12, Math.round((distanceKm / 24) * 60)),
+    routeGeometry: [
+      [depotLocation.longitude, depotLocation.latitude],
+      [longitude, latitude],
+    ],
+    fallback: false,
+    depotLocation,
+    orgId: DEMO_ORGANIZATIONS[0]._id,
+    orgName: DEMO_ORGANIZATIONS[0].name,
+    areaName: body.area || "Bela Vista",
+  };
 }
 
 export function getDemoApiMockResponse(config, explicitToken = null) {
@@ -875,20 +966,62 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
     return demoResponse({ pickups: [{ ...DEMO_DRIVER_PICKUP }] });
   }
 
-  if (method === "get" && pathname === "/pickups/my-pickups") {
+  if (method === "post" && pathname === "/pickups/estimate") {
+    return demoResponse(buildDemoPickupEstimate(body));
+  }
+
+  if (method === "post" && pathname === "/pickups") {
+    const estimate = buildDemoPickupEstimate(body);
+    const pickupId = "demo-pickup-ECO2026";
+    const pickup = {
+      id: pickupId,
+      _id: pickupId,
+      customer: DEMO_USER,
+      category: body.category || "non-recyclable",
+      level: body.level || "easy",
+      wasteUploadId: body.wasteUploadId || null,
+      location: {
+        latitude: Number(body.latitude),
+        longitude: Number(body.longitude),
+        address: body.address || "Endereço selecionado no mapa",
+      },
+      area: body.area || estimate.areaName,
+      organization: estimate.orgName,
+      status: "PAYMENT_REQUIRED",
+      paymentMethod: null,
+      paymentStatus: "UNPAID",
+      estimatedPrice: estimate.estimatedPrice,
+      price: estimate.estimatedPrice,
+      currency: estimate.currency,
+      priceBreakdown: estimate.priceBreakdown,
+      routeDistanceKm: estimate.distanceKm,
+      routeDurationMinutes: estimate.durationMinutes,
+      routeGeometry: estimate.routeGeometry,
+      depotLocation: estimate.depotLocation,
+      createdAt: nowIso(),
+    };
+    saveDemoRuntimePickup(pickup);
     return demoResponse({
-      pickups: DEMO_HISTORY_PICKUPS,
+      message: "Solicitação demonstrativa criada com sucesso.",
+      pickup,
+    }, 201);
+  }
+
+  if (method === "get" && pathname === "/pickups/my-pickups") {
+    const pickups = [{ ...DEMO_DRIVER_PICKUP }, ...DEMO_HISTORY_PICKUPS];
+    return demoResponse({
+      pickups,
       activePickup: { ...DEMO_DRIVER_PICKUP },
       stats: {
-        total: DEMO_HISTORY_PICKUPS.length,
+        total: pickups.length,
         totalSpent: 148,
-        statusCounts: { COMPLETED: 1, CANCELLED: 1, PAYMENT_REQUIRED: 1 },
-        categoryCounts: { recyclable: 2, mixed: 1 },
-        levelCounts: { easy: 1, medium: 1, hard: 1 },
+        statusCounts: { PENDING: 1, COMPLETED: 1, CANCELLED: 1, PAYMENT_REQUIRED: 1 },
+        categoryCounts: { recyclable: 3, mixed: 1 },
+        levelCounts: { easy: 1, medium: 2, hard: 1 },
         monthly: [
           {
             month: dateKey(0).slice(0, 7),
-            created: DEMO_HISTORY_PICKUPS.length,
+            created: pickups.length,
             completed: 1,
             cancelled: 1,
           },
@@ -965,6 +1098,7 @@ export function getDemoApiMockResponse(config, explicitToken = null) {
 
   if (method === "post" && pathname === "/payments/initiate") {
     const pickup =
+      getDemoRuntimePickup(body.pickupId) ||
       DEMO_HISTORY_PICKUPS.find(
         (item) => String(item.id || item._id) === String(body.pickupId),
       ) || DEMO_DRIVER_PICKUP;

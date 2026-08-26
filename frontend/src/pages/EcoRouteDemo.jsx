@@ -334,9 +334,9 @@ export default function EcoRouteDemo() {
           </div>
         </section>
 
-        <section id="solicitacao" className="mt-7 scroll-mt-24 px-5 md:px-10 lg:px-16">
-          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl lg:grid-cols-[0.9fr_1.35fr]">
-            <aside className="relative hidden min-h-[620px] overflow-hidden bg-primary px-7 py-8 text-white sm:px-10 lg:block lg:px-12">
+        <section id="solicitacao" className="mt-7 scroll-mt-24 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
+          <div className="mx-auto grid max-w-[90rem] overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl xl:grid-cols-[minmax(20rem,0.72fr)_minmax(0,1.6fr)]">
+            <aside className="relative hidden min-h-[620px] overflow-hidden bg-primary px-10 py-8 text-white xl:block">
               <div
                 className="absolute inset-0 bg-cover bg-center opacity-30"
                 style={{ backgroundImage: `url(${PickupBg})` }}
@@ -373,7 +373,7 @@ export default function EcoRouteDemo() {
               </div>
             </aside>
 
-            <section className="min-w-0 bg-[#f8faf6] px-5 py-6 text-primary sm:px-8 lg:px-10">
+            <section className="min-w-0 bg-[#f8faf6] px-5 py-6 text-primary sm:px-8 xl:px-10">
               <div className="flex flex-col gap-4 border-b border-primary/10 pb-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/40">Simulação de coleta</p>
@@ -391,8 +391,8 @@ export default function EcoRouteDemo() {
                 </div>
               </div>
 
-              <div className="grid gap-6 py-6 xl:grid-cols-[0.92fr_1.08fr]">
-                <div className="space-y-6">
+              <div className="grid min-w-0 gap-6 py-6 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+                <div className="min-w-0 space-y-6">
                   <div>
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
@@ -579,7 +579,7 @@ export default function EcoRouteDemo() {
                   )}
                 </div>
 
-                <div className="space-y-5">
+                <div className="min-w-0 space-y-5">
                   <div>
                     <div className="mb-3 flex items-end justify-between gap-3">
                       <div>
@@ -610,7 +610,7 @@ export default function EcoRouteDemo() {
                   </div>
 
                   <div id="pontos-de-descarte" className="scroll-mt-28">
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/40">Alternativa pública</p>
                         <h3 className="mt-1 text-xl font-extrabold">Pontos reais próximos</h3>
@@ -620,7 +620,7 @@ export default function EcoRouteDemo() {
                           href={`https://www.google.com/maps/search/?api=1&query=${selectedPoint.latitude},${selectedPoint.longitude}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-bold text-white transition hover:bg-primary/90"
+                          className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-bold text-white transition hover:bg-primary/90"
                         >
                           Abrir rota
                           <ExternalLink size={14} />
@@ -647,7 +647,7 @@ export default function EcoRouteDemo() {
                 </div>
               </div>
 
-              <div className="grid gap-3 border-t border-primary/10 pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+              <div className="grid gap-3 border-t border-primary/10 pt-5 lg:grid-cols-2 lg:items-center 2xl:grid-cols-[1fr_1fr_auto]">
                 <button
                   id="calculo-da-taxa"
                   type="button"
@@ -669,7 +669,7 @@ export default function EcoRouteDemo() {
                   {isCustomer ? "Continuar solicitação" : "Entrar para solicitar"}
                 </button>
 
-                <div className="flex items-center justify-center gap-2 text-xs font-semibold text-primary/45 sm:justify-end">
+                <div className="flex items-center justify-center gap-2 text-xs font-semibold text-primary/45 lg:col-span-2 2xl:col-span-1 2xl:justify-end">
                   <Scale size={14} />
                   Peso, volume e rota
                   <BadgeCheck size={14} />

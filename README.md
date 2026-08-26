@@ -42,7 +42,7 @@ Os nomes abaixo representam conceitos diferentes. Uma organização não é uma 
 | --- | --- | --- | --- |
 | Cliente | usuário com papel `customer_admin` | solicita a retirada, acompanha a coleta e paga o preço daquele serviço | sim, por coleta |
 | Operador parceiro | entidade `Organization` | cooperativa ou empresa prestadora que reúne base, áreas, frota e equipe | não |
-| Gestor da operação | usuário com papel `admin` e vínculo a uma `Organization` | coordena coletores, veículos, áreas, pagamentos recebidos e planejamento de rotas | não |
+| Gestor da operação | usuário com papel `admin` e vínculo a uma `Organization` | coordena coletores, veículos, áreas e coletas do operador; consulta o planejamento correspondente ao seu escopo | não |
 | Coletor | usuário com papel `driver` e vínculo a uma `Organization` | aceita e executa as retiradas em campo; confirma recebimentos em dinheiro | não |
 | Administração da plataforma | usuário com papel `super_admin` | governa a rede EcoRoute, cadastra operadores e monitora resultados consolidados | não |
 
@@ -62,6 +62,7 @@ O fluxo comercial é único: o cliente solicita uma coleta, o sistema calcula o 
 ### Cliente
 
 - painel com indicadores de pedidos;
+- página **Minhas coletas** com endereço, material, valor, pagamento e andamento somente dos pedidos da conta autenticada;
 - solicitação de coleta;
 - upload de imagem do resíduo;
 - acompanhamento de status;
@@ -94,7 +95,7 @@ O fluxo comercial é único: o cliente solicita uma coleta, o sistema calcula o 
 - estatísticas de coleta;
 - relatórios;
 - mensagens internas;
-- planejamento diário de rotas com apoio de ML e confirmação do gestor.
+- planejamento diário de rotas com apoio de ML, geração e confirmação pela administração da plataforma e consulta operacional por escopo.
 
 ## Arquitetura
 
@@ -162,7 +163,7 @@ O backend concentra regras de negócio, persistência e integração entre módu
 | `/api/organizations` | operadores parceiros (cooperativas ou empresas) |
 | `/api/drivers` | coletores vinculados aos operadores |
 | `/api/areas` | áreas de atendimento |
-| `/api/ml-schedule` | agenda inteligente |
+| `/api/ml-schedule` | planejamento assistido de rotas |
 | `/api/contact` | mensagens de contato |
 | `/api/history` | histórico operacional |
 | `/api/notifications` | notificações |
@@ -191,7 +192,7 @@ As principais entidades são:
 | `Payment` | transações de pagamento de pedidos |
 | `PricingConfig` | configuração de preço |
 | `Location` | pontos de coleta/descarte |
-| `MLSchedule` | agenda gerada para operação |
+| `MLSchedule` | proposta diária de áreas, veículos e coletores para a operação |
 | `WasteLog` | dados de apoio ao módulo de previsão |
 
 ## Fluxo de coleta
@@ -262,7 +263,7 @@ O frontend foi construído com React e Vite. A interface usa navegação por per
 | --- | --- |
 | `/customer-dashboard` | painel do cliente |
 | `/upload-waste` | envio de resíduo |
-| `/schedule` | agenda |
+| `/schedule` | próprias solicitações em **Minhas coletas** |
 | `/billing` | pagamentos das coletas |
 | `/searching` | busca de coletor |
 | `/payment-success` | comprovante |
@@ -286,8 +287,10 @@ O frontend foi construído com React e Vite. A interface usa navegação por per
 | `/admin-dashboard/users` | contas e acessos |
 | `/admin-dashboard/organizations` | operadores parceiros |
 | `/admin-dashboard/areas` | áreas |
+| `/admin-dashboard/ml-schedule` | planejamento assistido de rotas |
 | `/admin-dashboard/drivers` | coletores |
 | `/admin-dashboard/vehicles` | veículos |
+| `/admin-dashboard/admins` | administração da plataforma e gestores dos operadores |
 | `/admin-dashboard/billing` | pagamentos das coletas |
 | `/admin-dashboard/pricing` | preços |
 | `/admin-dashboard/pickup-stats` | estatísticas |
@@ -296,7 +299,9 @@ O frontend foi construído com React e Vite. A interface usa navegação por per
 
 ## ML e planejamento de rotas
 
-O módulo `ml` gera previsão de volume de resíduos por área e sugere a distribuição de veículos e coletores. A sugestão não substitui a decisão operacional: um gestor revisa e confirma o planejamento antes do despacho. O módulo usa um dataset sintético da Grande São Paulo, com:
+O planejamento é um recurso administrativo, não uma solicitação feita pelo cliente. A Administração EcoRoute escolhe a data e solicita uma proposta. O módulo `ml` estima o volume de resíduos por área a partir do histórico e do perfil regional; em seguida, o sistema sugere combinações de veículos e coletores considerando capacidade e disponibilidade. A administração revisa as áreas sem cobertura e confirma a proposta antes do despacho. O sistema não cria pedidos de clientes nem envia veículos sozinho, e os gestores dos operadores consultam apenas o escopo operacional correspondente.
+
+O módulo usa um dataset sintético da Grande São Paulo, com:
 
 - bairros e regiões paulistas;
 - estações brasileiras;

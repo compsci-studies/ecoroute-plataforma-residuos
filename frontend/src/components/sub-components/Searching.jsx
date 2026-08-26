@@ -31,6 +31,10 @@ const customerIcon = new L.Icon({
 });
 
 const PICKUP_SESSION_KEY = "pending-pickup-payment";
+const formatCurrencyBRL = (value) => new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+}).format(Number(value) || 0);
 
 // ── Map helpers ──────────────────────────────────────────────────────────────
 function MapClickHandler({ onClick }) {
@@ -239,21 +243,21 @@ function PriceCard({ estimate, category, level }) {
       <div className="divide-y divide-primary/6">
         <div className="px-5 py-3.5 flex items-center justify-between">
           <span className="text-xs text-primary/55 font-medium">Base por material ({catLabels[category] || category})</span>
-          <span className="text-sm font-semibold text-primary">R$ {estimate.priceBreakdown?.categoryBase}</span>
+          <span className="text-sm font-semibold text-primary">{formatCurrencyBRL(estimate.priceBreakdown?.categoryBase)}</span>
         </div>
         <div className="px-5 py-3.5 flex items-center justify-between">
           <span className="text-xs text-primary/55 font-medium">Peso/volume ({lvlLabels[level] || level})</span>
           <span className="text-sm font-semibold text-primary">&times;{estimate.priceBreakdown?.levelMultiplier}</span>
         </div>
         <div className="px-5 py-3.5 flex items-center justify-between">
-          <span className="text-xs text-primary/55 font-medium">Distancia ({estimate.distanceKm?.toFixed(1)} km)</span>
-          <span className="text-sm font-semibold text-primary">R$ {estimate.priceBreakdown?.distanceCharge}</span>
+          <span className="text-xs text-primary/55 font-medium">Distância ({estimate.distanceKm?.toFixed(1)} km)</span>
+          <span className="text-sm font-semibold text-primary">{formatCurrencyBRL(estimate.priceBreakdown?.distanceCharge)}</span>
         </div>
       </div>
       {/* Total */}
       <div className="px-5 py-4 bg-primary/5 flex items-center justify-between border-t border-primary/10">
         <span className="text-sm font-bold text-primary">Total estimado</span>
-        <span className="text-2xl font-extrabold text-primary">R$ {estimate.estimatedPrice}</span>
+        <span className="text-2xl font-extrabold text-primary">{formatCurrencyBRL(estimate.estimatedPrice)}</span>
       </div>
       {/* Route meta */}
       <div className="px-5 py-3 flex flex-wrap items-center gap-4 text-xs text-primary/50 border-t border-primary/5">
@@ -797,7 +801,7 @@ function SearchPage() {
 
                 {estimate && (
                   <div className="flex flex-wrap items-center gap-3 text-xs">
-                    <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary font-semibold">R$ {estimate.estimatedPrice}</span>
+                    <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary font-semibold">{formatCurrencyBRL(estimate.estimatedPrice)}</span>
                     <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary/60">{estimate.distanceKm?.toFixed(1)} km</span>
                     <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary/60">~{Math.ceil(estimate.durationMinutes || 0)} min</span>
                   </div>
@@ -819,7 +823,7 @@ function SearchPage() {
                     <p className="text-sm text-primary/50">
                       {driverInfo?.licensePlate && <span className="font-semibold text-primary">{driverInfo.licensePlate}</span>}
                       {driverInfo?.licensePlate && " \u00B7 "}
-                      Veiculo a caminho
+                      Veículo a caminho
                     </p>
                   </div>
                 </div>
@@ -828,7 +832,7 @@ function SearchPage() {
 
                 {estimate && (
                   <div className="flex flex-wrap items-center gap-3 text-xs">
-                    <span className="px-3 py-1.5 rounded-full bg-primary/8 text-primary font-bold">R$ {estimate.estimatedPrice}</span>
+                    <span className="px-3 py-1.5 rounded-full bg-primary/8 text-primary font-bold">{formatCurrencyBRL(estimate.estimatedPrice)}</span>
                     <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary/60">{estimate.distanceKm?.toFixed(1)} km</span>
                     <span className="px-3 py-1.5 rounded-full bg-primary/5 text-primary/60">~{Math.ceil(estimate.durationMinutes || 0)} min</span>
                   </div>
@@ -836,7 +840,7 @@ function SearchPage() {
 
                 {canCancel && (
                   <p className="text-xs text-primary/40">
-                    Você pode cancelar em ate <span className="font-bold text-primary">{String(secondsLeft).padStart(2, "0")}s</span>
+                    Você pode cancelar em até <span className="font-bold text-primary">{String(secondsLeft).padStart(2, "0")}s</span>
                   </p>
                 )}
 
@@ -892,7 +896,7 @@ function SearchPage() {
               </p>
               {estimate?.estimatedPrice && (
                 <div className="mt-3 inline-flex items-center px-3 py-1.5 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                  Total: R$ {estimate.estimatedPrice}
+                  Total: {formatCurrencyBRL(estimate.estimatedPrice)}
                 </div>
               )}
             </div>
